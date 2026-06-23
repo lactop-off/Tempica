@@ -45,16 +45,17 @@ services:
         condition: service_healthy
     profiles: ["worker"]
 
-  # 任意：本フェーズではデザイン確定後に実装。compose では雛形のみ。
+  # Next.js フロントエンド。/api/v1 を backend へプロキシ（セッション Cookie 共有）。
   frontend:
     build: ./frontend
     environment:
-      API_BASE_URL: http://backend:3000/api/v1
+      NODE_ENV: production
+      BACKEND_ORIGIN: http://backend:3000
+      PORT: "8080"
     depends_on:
       - backend
     ports:
       - "8080:8080"
-    profiles: ["frontend"]
 
 volumes:
   db-data:
