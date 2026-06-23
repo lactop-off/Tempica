@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  body{margin:0;background:#e7e5df;}
+  .tp-num{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums;}
+  .tp-rd{font-family:'M PLUS Rounded 1c',sans-serif;}
+  ::-webkit-scrollbar{width:10px;height:10px;}
+  ::-webkit-scrollbar-thumb{background:#d8d2c7;border-radius:6px;border:2px solid transparent;background-clip:content-box;}
+  .tp-scroll{overflow-y:auto;}
+</style>
+</helmet>
+<div style="width:max-content;min-width:100%;min-height:100vh;box-sizing:border-box;padding:40px 48px 72px;background:#e7e5df;font-family:'Noto Sans JP',sans-serif;color:#44403C;">
+
+  <!-- toolbar -->
+  <div style="display:flex;align-items:center;gap:18px;max-width:1640px;margin-bottom:26px;">
+    <div style="display:flex;align-items:center;gap:11px;">
+      <svg width="32" height="32" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="13" fill="#0D9488"/><circle cx="20" cy="20" r="6" fill="#fff"/><path d="M20 8a12 12 0 0 1 11.5 8.6" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/></svg>
+      <span class="tp-rd" style="font-size:21px;font-weight:800;color:#134E4A;letter-spacing:-.01em;">Tempica</span>
+    </div>
+    <div style="height:22px;width:1px;background:#cfc8bb;"></div>
+    <div style="font-size:13px;color:#807a71;">勤怠管理システム・インタラクティブプロトタイプ</div>
+    <div style="flex:1;"></div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:12px;color:#8a857c;">表示ロール</span>
+      <div style="display:flex;background:#fff;border:1px solid #e0d9cd;border-radius:10px;padding:3px;gap:2px;">
+        <sc-for list="{{ roleTabs }}" as="r" hint-placeholder-count="3">
+          <button onClick="{{ r.onClick }}" style="{{ r.style }}">{{ r.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <!-- frames -->
+  <div style="display:flex;gap:40px;align-items:flex-start;">
+
+    <!-- ================= DESKTOP FRAME ================= -->
+    <div style="flex:none;width:1180px;">
+      <div style="font-size:12px;font-weight:700;letter-spacing:.06em;color:#8a857c;margin-bottom:11px;display:flex;align-items:center;gap:8px;">
+        <span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:#0D9488;"></span>PC（デスクトップ）— {{ screenLabel }}
+      </div>
+      <div style="background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(31,28,24,.13);overflow:hidden;height:812px;display:flex;flex-direction:column;">
+        <!-- window bar -->
+        <div style="height:42px;flex:none;background:#FAF8F4;border-bottom:1px solid #ECE7DE;display:flex;align-items:center;padding:0 16px;gap:8px;">
+          <span style="width:11px;height:11px;border-radius:50%;background:#E6E0D6;"></span>
+          <span style="width:11px;height:11px;border-radius:50%;background:#E6E0D6;"></span>
+          <span style="width:11px;height:11px;border-radius:50%;background:#E6E0D6;"></span>
+          <div style="margin-left:14px;background:#fff;border:1px solid #ECE7DE;border-radius:7px;height:24px;display:flex;align-items:center;padding:0 12px;font-size:11px;color:#A8A096;min-width:280px;" class="tp-num">tempica.local/{{ screen }}</div>
+        </div>
+
+        <!-- GUEST: login -->
+        <sc-if value="{{ guest }}" hint-placeholder-val="{{ true }}">
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;background:#FAF8F4;">
+            <div style="width:380px;">
+              <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:30px;">
+                <svg width="52" height="52" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="13" fill="#0D9488"/><circle cx="20" cy="20" r="6" fill="#fff"/><path d="M20 8a12 12 0 0 1 11.5 8.6" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/></svg>
+                <div class="tp-rd" style="font-size:26px;font-weight:800;color:#134E4A;margin-top:14px;">Tempica</div>
+                <div style="font-size:13px;color:#857C70;margin-top:4px;">勤怠管理システムにログイン</div>
+              </div>
+              <div style="background:#fff;border:1px solid #ECE7DE;border-radius:18px;padding:30px;box-shadow:0 2px 14px rgba(13,148,136,.05);">
+                <sc-if value="{{ loginError }}" hint-placeholder-val="{{ false }}">
+                  <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:11px;padding:11px 14px;margin-bottom:18px;display:flex;gap:9px;align-items:center;">
+                    <span style="color:#EF4444;font-weight:700;font-size:15px;">!</span>
+                    <span style="font-size:12.5px;color:#B91C1C;">メールアドレスまたはパスワードが正しくありません。</span>
+                  </div>
+                </sc-if>
+                <label style="font-size:12px;font-weight:700;color:#5C5750;display:block;margin-bottom:7px;">メールアドレス</label>
+                <input value="{{ loginEmail }}" onInput="{{ onEmail }}" placeholder="you@example.com" style="width:100%;height:46px;border:1px solid #E0D9CD;border-radius:11px;padding:0 14px;font-size:14px;font-family:inherit;color:#44403C;background:#FCFBF8;outline:none;margin-bottom:16px;" />
+                <label style="font-size:12px;font-weight:700;color:#5C5750;display:block;margin-bottom:7px;">パスワード</label>
+                <input type="password" value="{{ loginPw }}" onInput="{{ onPw }}" placeholder="••••••••" style="width:100%;height:46px;border:1px solid #E0D9CD;border-radius:11px;padding:0 14px;font-size:14px;font-family:inherit;color:#44403C;background:#FCFBF8;outline:none;margin-bottom:8px;" />
+                <div style="display:flex;justify-content:flex-end;margin-bottom:20px;"><a style="font-size:12px;color:#0D9488;text-decoration:none;cursor:pointer;font-weight:500;">パスワードをお忘れですか？</a></div>
+                <button onClick="{{ doLogin }}" class="tp-rd" style="width:100%;height:48px;border:none;border-radius:13px;background:#0D9488;color:#fff;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(13,148,136,.28);">ログイン</button>
+              </div>
+              <div style="text-align:center;margin-top:20px;font-size:12px;color:#A8A096;">初回起動の場合は <a onClick="{{ goSetup }}" style="color:#0D9488;cursor:pointer;font-weight:600;text-decoration:none;">初期セットアップ</a> へ</div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- SETUP wizard -->
+        <sc-if value="{{ screenIs.setup }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;background:#FAF8F4;padding:30px;">
+            <div style="width:560px;background:#fff;border:1px solid #ECE7DE;border-radius:20px;padding:36px;box-shadow:0 2px 14px rgba(13,148,136,.05);">
+              <div class="tp-rd" style="font-size:22px;font-weight:800;color:#134E4A;">初期セットアップ</div>
+              <div style="font-size:13px;color:#857C70;margin-top:5px;">自己ホスト環境を立ち上げます。3ステップで完了します。</div>
+              <div style="display:flex;align-items:center;gap:6px;margin:26px 0 28px;">
+                <sc-for list="{{ setupSteps }}" as="s" hint-placeholder-count="3">
+                  <div style="{{ s.dotStyle }}">{{ s.n }}</div>
+                  <div style="{{ s.barStyle }}"></div>
+                </sc-for>
+              </div>
+              <div class="tp-rd" style="font-size:15px;font-weight:700;color:#134E4A;margin-bottom:16px;">{{ setupStepTitle }}</div>
+              <div style="display:flex;flex-direction:column;gap:14px;">
+                <sc-for list="{{ setupFields }}" as="f" hint-placeholder-count="3">
+                  <div>
+                    <label style="font-size:12px;font-weight:700;color:#5C5750;display:block;margin-bottom:7px;">{{ f.label }}</label>
+                    <input value="{{ f.value }}" placeholder="{{ f.ph }}" style="width:100%;height:44px;border:1px solid #E0D9CD;border-radius:11px;padding:0 14px;font-size:14px;font-family:inherit;color:#44403C;background:#FCFBF8;outline:none;" />
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-top:28px;">
+                <button onClick="{{ setupBack }}" class="tp-rd" style="height:44px;padding:0 20px;border:1px solid #E0D9CD;border-radius:12px;background:#fff;color:#5C5750;font-size:14px;font-weight:700;cursor:pointer;">戻る</button>
+                <button onClick="{{ setupNext }}" class="tp-rd" style="height:44px;padding:0 24px;border:none;border-radius:12px;background:#0D9488;color:#fff;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(13,148,136,.25);">{{ setupNextLabel }}</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- AUTHED app -->
+        <sc-if value="{{ authed }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;display:flex;min-height:0;">
+            <!-- sidebar -->
+            <div class="tp-scroll" style="width:236px;flex:none;background:#FAF8F4;border-right:1px solid #ECE7DE;padding:16px 12px;">
+              <sc-for list="{{ navSections }}" as="sec" hint-placeholder-count="2">
+                <div style="font-size:10.5px;font-weight:700;letter-spacing:.1em;color:#A8A096;padding:10px 12px 7px;">{{ sec.title }}</div>
+                <sc-for list="{{ sec.items }}" as="it" hint-placeholder-count="4">
+                  <button onClick="{{ it.onClick }}" style="{{ it.style }}">
+                    <span style="display:flex;width:20px;justify-content:center;">{{ it.icon }}</span>
+                    <span style="flex:1;text-align:left;">{{ it.label }}</span>
+                    <sc-if value="{{ it.badge }}" hint-placeholder-val="{{ false }}"><span style="background:#0D9488;color:#fff;font-size:10px;font-weight:700;border-radius:9px;padding:1px 7px;" class="tp-num">{{ it.badge }}</span></sc-if>
+                  </button>
+                </sc-for>
+              </sc-for>
+            </div>
+            <!-- main -->
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;background:#FAF8F4;">
+              <!-- header -->
+              <div style="height:60px;flex:none;border-bottom:1px solid #ECE7DE;background:#fff;display:flex;align-items:center;padding:0 24px;gap:16px;">
+                <div class="tp-rd" style="font-size:17px;font-weight:800;color:#134E4A;">{{ screenLabel }}</div>
+                <div style="flex:1;"></div>
+                <div style="position:relative;width:34px;height:34px;border-radius:10px;background:#FAF8F4;border:1px solid #ECE7DE;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                  {{ bellIcon }}
+                  <span style="position:absolute;top:-4px;right:-4px;background:#EF4444;color:#fff;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;" class="tp-num">3</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:9px;cursor:pointer;">
+                  <div class="tp-rd" style="width:34px;height:34px;border-radius:11px;background:#CCFBF1;color:#0F766E;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;">{{ userInitial }}</div>
+                  <div style="line-height:1.25;">
+                    <div style="font-size:13px;font-weight:700;color:#44403C;">{{ userName }}</div>
+                    <div style="font-size:11px;color:#A8A096;">{{ roleLabel }}</div>
+                  </div>
+                </div>
+              </div>
+              <!-- content -->
+              <div class="tp-scroll" style="flex:1;min-height:0;padding:26px 28px;">
+
+                <!-- DASHBOARD -->
+                <sc-if value="{{ screenIs.dashboard }}" hint-placeholder-val="{{ true }}">
+                  <div style="max-width:1000px;margin:0 auto;">
+                    <div style="font-size:14px;color:#857C70;margin-bottom:18px;">{{ greeting }}</div>
+                    <div style="display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:16px;margin-bottom:16px;">
+                      <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:20px;">
+                        <div style="font-size:12px;color:#857C70;font-weight:500;">本日の勤務</div>
+                        <div style="display:flex;align-items:baseline;gap:8px;margin-top:8px;">
+                          <span class="tp-rd" style="font-size:18px;font-weight:800;color:#10B981;">{{ punchStatusLabel }}</span>
+                        </div>
+                        <div style="display:flex;align-items:baseline;gap:6px;margin-top:14px;">
+                          <span class="tp-num" style="font-size:34px;font-weight:700;color:#134E4A;letter-spacing:-.02em;">{{ workedLabel }}</span>
+                          <span style="font-size:13px;color:#A8A096;">/ 8:00 実働</span>
+                        </div>
+                        <div style="font-size:12px;color:#857C70;margin-top:8px;">出勤 <span class="tp-num">{{ clockInTime }}</span> ・ 休憩 <span class="tp-num">60</span>分</div>
+                      </div>
+                      <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:20px;">
+                        <div style="font-size:12px;color:#857C70;font-weight:500;">承認待ち</div>
+                        <div style="display:flex;align-items:baseline;gap:6px;margin-top:10px;"><span class="tp-num" style="font-size:34px;font-weight:700;color:#134E4A;">{{ pendingCount }}</span><span style="font-size:13px;color:#A8A096;">件</span></div>
+                        <button onClick="{{ goApprove }}" class="tp-rd" style="margin-top:14px;width:100%;height:38px;border:1px solid #99F6E4;border-radius:11px;background:#F0FDFA;color:#0F766E;font-size:13px;font-weight:700;cursor:pointer;">承認一覧へ</button>
+                      </div>
+                      <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:20px;">
+                        <div style="font-size:12px;color:#857C70;font-weight:500;">有給残数</div>
+                        <div style="display:flex;align-items:baseline;gap:6px;margin-top:10px;"><span class="tp-num" style="font-size:34px;font-weight:700;color:#134E4A;">14.0</span><span style="font-size:13px;color:#A8A096;">日</span></div>
+                        <div style="font-size:12px;color:#857C70;margin-top:14px;">今年度取得 <span class="tp-num">6.0</span>日 / 義務 5日</div>
+                      </div>
+                    </div>
+
+                    <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:20px;margin-bottom:16px;">
+                      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;"><div class="tp-rd" style="font-size:14px;font-weight:700;color:#134E4A;">クイック打刻</div><a onClick="{{ goPunch }}" style="font-size:12px;color:#0D9488;cursor:pointer;font-weight:600;text-decoration:none;">打刻画面 →</a></div>
+                      <div style="display:flex;align-items:center;gap:18px;">
+                        <div class="tp-num" style="font-size:38px;font-weight:700;color:#134E4A;letter-spacing:.01em;">{{ clock }}</div>
+                        <div style="display:flex;gap:10px;flex:1;">
+                          <sc-for list="{{ punchButtons }}" as="b" hint-placeholder-count="4">
+                            <button onClick="{{ b.onClick }}" disabled="{{ b.disabled }}" class="tp-rd" style="{{ b.style }}">{{ b.label }}</button>
+                          </sc-for>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                      <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:20px;">
+                        <div class="tp-rd" style="font-size:14px;font-weight:700;color:#134E4A;margin-bottom:14px;">アラート</div>
+                        <div style="display:flex;flex-direction:column;gap:10px;">
+                          <sc-for list="{{ alerts }}" as="a" hint-placeholder-count="2">
+                            <div style="{{ a.wrap }}">
+                              <span style="{{ a.dot }}"></span>
+                              <div style="flex:1;"><div style="font-size:13px;font-weight:700;color:#44403C;">{{ a.title }}</div><div style="font-size:12px;color:#857C70;margin-top:2px;">{{ a.desc }}</div></div>
+                            </div>
+                          </sc-for>
+                        </div>
+                      </div>
+                      <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:20px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;"><div class="tp-rd" style="font-size:14px;font-weight:700;color:#134E4A;">最近の申請</div><a onClick="{{ goReqList }}" style="font-size:12px;color:#0D9488;cursor:pointer;font-weight:600;text-decoration:none;">すべて見る →</a></div>
+                        <div style="display:flex;flex-direction:column;">
+                          <sc-for list="{{ recentRequests }}" as="r" hint-placeholder-count="3">
+                            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #F4EFE7;">
+                              <div style="flex:1;"><div style="font-size:13px;font-weight:500;color:#44403C;">{{ r.type }}</div><div style="font-size:11px;color:#A8A096;" class="tp-num">{{ r.date }}</div></div>
+                              <span style="{{ r.badge }}">{{ r.status }}</span>
+                            </div>
+                          </sc-for>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <!-- PUNCH -->
+                <sc-if value="{{ screenIs.punch }}" hint-placeholder-val="{{ false }}">
+                  <div style="max-width:560px;margin:0 auto;">
+                    <div style="background:#fff;border:1px solid #ECE7DE;border-radius:20px;padding:34px;text-align:center;box-shadow:0 2px 14px rgba(13,148,136,.04);">
+                      <div style="font-size:13px;color:#857C70;">{{ clockDate }}</div>
+                      <div class="tp-num" style="font-size:68px;font-weight:700;color:#134E4A;letter-spacing:.01em;line-height:1.1;margin:6px 0 4px;">{{ clock }}</div>
+                      <div style="display:inline-flex;align-items:center;gap:7px;background:#F0FDFA;border:1px solid #99F6E4;border-radius:20px;padding:5px 14px;margin-bottom:26px;"><span style="width:8px;height:8px;border-radius:50%;background:#10B981;"></span><span style="font-size:13px;font-weight:700;color:#0F766E;">{{ punchStatusLabel }}</span></div>
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                        <sc-for list="{{ bigPunchButtons }}" as="b" hint-placeholder-count="4">
+                          <button onClick="{{ b.onClick }}" disabled="{{ b.disabled }}" class="tp-rd" style="{{ b.style }}">{{ b.label }}</button>
+                        </sc-for>
+                      </div>
+                      <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:20px;font-size:12px;color:#A8A096;">{{ pinIcon }}<span>位置情報：本社オフィス付近で取得済み</span></div>
+                    </div>
+                    <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:20px 22px;margin-top:18px;">
+                      <div class="tp-rd" style="font-size:14px;font-weight:700;color:#134E4A;margin-bottom:8px;">本日の打刻履歴</div>
+                      <sc-if value="{{ hasPunches }}" hint-placeholder-val="{{ false }}">
+                        <div style="display:flex;flex-direction:column;">
+                          <sc-for list="{{ todayPunches }}" as="p" hint-placeholder-count="2">
+                            <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #F4EFE7;">
+                              <span style="{{ p.dot }}"></span>
+                              <span style="flex:1;font-size:13px;color:#44403C;font-weight:500;">{{ p.label }}</span>
+                              <span class="tp-num" style="font-size:15px;font-weight:600;color:#134E4A;">{{ p.time }}</span>
+                            </div>
+                          </sc-for>
+                        </div>
+                      </sc-if>
+                      <sc-if value="{{ noPunches }}" hint-placeholder-val="{{ true }}">
+                        <div style="text-align:center;padding:24px 0;color:#A8A096;font-size:13px;">まだ打刻がありません。<br>出勤ボタンから1日を始めましょう。</div>
+                      </sc-if>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <!-- MY ATTENDANCE -->
+                <sc-if value="{{ screenIs.myatt }}" hint-placeholder-val="{{ false }}">
+                  <div style="max-width:1000px;margin:0 auto;display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start;">
+                    <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:20px;">
+                      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                        <div style="display:flex;align-items:center;gap:12px;">
+                          <button style="width:32px;height:32px;border-radius:9px;border:1px solid #E0D9CD;background:#fff;cursor:pointer;color:#857C70;font-size:15px;">‹</button>
+                          <div class="tp-rd" style="font-size:17px;font-weight:800;color:#134E4A;">2026年 6月</div>
+                          <button style="width:32px;height:32px;border-radius:9px;border:1px solid #E0D9CD;background:#fff;cursor:pointer;color:#857C70;font-size:15px;">›</button>
+                        </div>
+                        <div style="display:flex;gap:12px;font-size:11px;color:#857C70;">
+                          <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:3px;background:#F0FDFA;border:1px solid #99F6E4;"></span>有給</span>
+                          <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:3px;background:#FFFBEB;border:1px solid #FDE68A;"></span>残業</span>
+                          <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:3px;background:#FAF8F4;border:1px solid #F4EFE7;"></span>休日</span>
+                        </div>
+                      </div>
+                      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;">
+                        <sc-for list="{{ weekHead }}" as="w" hint-placeholder-count="7"><div style="{{ w.style }}">{{ w.w }}</div></sc-for>
+                      </div>
+                      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:2px;">
+                        <sc-for list="{{ calCells }}" as="c" hint-placeholder-count="30">
+                          <sc-if value="{{ c.blank }}" hint-placeholder-val="{{ false }}"><div style="{{ c.style }}"></div></sc-if>
+                          <sc-if value="{{ c.show }}" hint-placeholder-val="{{ true }}">
+                            <div onClick="{{ c.onClick }}" style="{{ c.style }}">
+                              <span class="tp-num" style="font-size:13px;font-weight:600;">{{ c.n }}</span>
+                              <sc-if value="{{ c.tag }}" hint-placeholder-val="{{ false }}"><span style="{{ c.tagStyle }}">{{ c.tag }}</span></sc-if>
+                            </div>
+                          </sc-if>
+                        </sc-for>
+                      </div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:16px;">
+                      <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:20px;">
+                        <div class="tp-rd" style="font-size:14px;font-weight:700;color:#134E4A;margin-bottom:14px;">月次サマリ</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                          <sc-for list="{{ monthSummary }}" as="m" hint-placeholder-count="4">
+                            <div style="background:#FAF8F4;border-radius:11px;padding:11px 13px;"><div style="font-size:11px;color:#857C70;">{{ m.0 }}</div><div class="tp-num" style="font-size:21px;font-weight:700;color:#134E4A;margin-top:2px;">{{ m.1 }}</div></div>
+                          </sc-for>
+                        </div>
+                      </div>
+                      <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:20px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><div class="tp-rd" style="font-size:14px;font-weight:700;color:#134E4A;">{{ selDayLabel }}（水）</div></div>
+                        <sc-if value="{{ dayHasRows }}" hint-placeholder-val="{{ true }}">
+                          <div style="display:flex;flex-direction:column;">
+                            <sc-for list="{{ dayRows }}" as="d" hint-placeholder-count="3">
+                              <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F4EFE7;"><span style="font-size:12.5px;color:#857C70;">{{ d.0 }}</span><span class="tp-num" style="font-size:13px;font-weight:600;color:#44403C;">{{ d.1 }}</span></div>
+                            </sc-for>
+                          </div>
+                          <button onClick="{{ goReqNew }}" class="tp-rd" style="margin-top:14px;width:100%;height:38px;border:1px solid #99F6E4;border-radius:11px;background:#F0FDFA;color:#0F766E;font-size:13px;font-weight:700;cursor:pointer;">この日を打刻修正申請</button>
+                        </sc-if>
+                        <sc-if value="{{ dayEmpty }}" hint-placeholder-val="{{ false }}"><div style="text-align:center;padding:18px 0;color:#A8A096;font-size:12.5px;">休日（勤務記録なし）</div></sc-if>
+                        <sc-if value="{{ dayFuture }}" hint-placeholder-val="{{ false }}"><div style="text-align:center;padding:18px 0;color:#A8A096;font-size:12.5px;">未来の日付です</div></sc-if>
+                      </div>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <!-- REQUEST CREATE -->
+                <sc-if value="{{ screenIs.reqnew }}" hint-placeholder-val="{{ false }}">
+                  <div style="max-width:720px;margin:0 auto;">
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;">
+                      <sc-for list="{{ reqTabs }}" as="t" hint-placeholder-count="6"><button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button></sc-for>
+                    </div>
+                    <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:24px;">
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                        <div><label style="font-size:12px;font-weight:700;color:#5C5750;display:block;margin-bottom:7px;">対象日 <span style="color:#EF4444;">*</span></label><input value="2026/06/24" style="width:100%;height:44px;border:1px solid #E0D9CD;border-radius:11px;padding:0 14px;font-size:14px;font-family:'JetBrains Mono',monospace;background:#FCFBF8;outline:none;" /></div>
+                        <sc-for list="{{ reqExtra }}" as="x" hint-placeholder-count="2">
+                          <div><label style="font-size:12px;font-weight:700;color:#5C5750;display:block;margin-bottom:7px;">{{ x.0 }}</label><input value="{{ x.1 }}" style="width:100%;height:44px;border:1px solid #E0D9CD;border-radius:11px;padding:0 14px;font-size:14px;font-family:inherit;background:#FCFBF8;outline:none;" /></div>
+                        </sc-for>
+                      </div>
+                      <sc-if value="{{ balanceWarn }}" hint-placeholder-val="{{ false }}">
+                        <div style="margin-top:16px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:11px;padding:11px 14px;display:flex;gap:9px;align-items:center;"><span style="color:#F59E0B;font-weight:700;">!</span><span style="font-size:12.5px;color:#B45309;">残数を超える申請はできません。現在の残数：14.0日</span></div>
+                      </sc-if>
+                      <div style="margin-top:16px;"><label style="font-size:12px;font-weight:700;color:#5C5750;display:block;margin-bottom:7px;">理由 <span style="color:#EF4444;">*</span></label><textarea value="{{ reqReason }}" onInput="{{ onReason }}" placeholder="申請理由を入力してください" style="width:100%;height:84px;border:1px solid #E0D9CD;border-radius:11px;padding:11px 14px;font-size:14px;font-family:inherit;background:#FCFBF8;outline:none;resize:none;"></textarea></div>
+                    </div>
+                    <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:20px 24px;margin-top:16px;">
+                      <div class="tp-rd" style="font-size:13px;font-weight:700;color:#134E4A;margin-bottom:14px;">承認経路プレビュー</div>
+                      <div style="display:flex;align-items:center;gap:8px;">
+                        <div style="display:flex;align-items:center;gap:8px;"><div class="tp-rd" style="width:30px;height:30px;border-radius:9px;background:#CCFBF1;color:#0F766E;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;">山</div><div><div style="font-size:12px;font-weight:700;color:#44403C;">申請</div><div style="font-size:10px;color:#A8A096;">山田 花子</div></div></div>
+                        <div style="flex:none;color:#D8D2C7;">→</div>
+                        <div style="display:flex;align-items:center;gap:8px;"><div class="tp-rd" style="width:30px;height:30px;border-radius:9px;background:#FAF8F4;border:1px solid #ECE7DE;color:#857C70;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;">課</div><div><div style="font-size:12px;font-weight:700;color:#44403C;">1次承認</div><div style="font-size:10px;color:#A8A096;">課長</div></div></div>
+                        <div style="flex:none;color:#D8D2C7;">→</div>
+                        <div style="display:flex;align-items:center;gap:8px;"><div class="tp-rd" style="width:30px;height:30px;border-radius:9px;background:#FAF8F4;border:1px solid #ECE7DE;color:#857C70;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;">人</div><div><div style="font-size:12px;font-weight:700;color:#44403C;">最終承認</div><div style="font-size:10px;color:#A8A096;">人事</div></div></div>
+                      </div>
+                    </div>
+                    <div style="display:flex;justify-content:flex-end;gap:12px;margin-top:18px;">
+                      <button onClick="{{ goReqList }}" class="tp-rd" style="height:46px;padding:0 22px;border:1px solid #E0D9CD;border-radius:12px;background:#fff;color:#5C5750;font-size:14px;font-weight:700;cursor:pointer;">キャンセル</button>
+                      <button onClick="{{ submitRequest }}" class="tp-rd" style="height:46px;padding:0 28px;border:none;border-radius:12px;background:#0D9488;color:#fff;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(13,148,136,.25);">申請を送信</button>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <!-- REQUEST LIST -->
+                <sc-if value="{{ screenIs.req }}" hint-placeholder-val="{{ false }}">
+                  <div style="max-width:920px;margin:0 auto;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                      <div style="display:flex;gap:8px;"><sc-for list="{{ reqFilterTabs }}" as="f" hint-placeholder-count="4"><button onClick="{{ f.onClick }}" style="{{ f.style }}">{{ f.label }}</button></sc-for></div>
+                      <button onClick="{{ goReqNew }}" class="tp-rd" style="height:40px;padding:0 18px;border:none;border-radius:11px;background:#0D9488;color:#fff;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 10px rgba(13,148,136,.22);">＋ 新規申請</button>
+                    </div>
+                    <sc-if value="{{ hasReq }}" hint-placeholder-val="{{ true }}">
+                      <div style="display:flex;flex-direction:column;gap:10px;">
+                        <sc-for list="{{ reqList }}" as="r" hint-placeholder-count="4">
+                          <div style="background:#fff;border:1px solid #ECE7DE;border-radius:14px;padding:16px 20px;display:flex;align-items:center;gap:16px;">
+                            <div style="flex:1;min-width:0;">
+                              <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;"><span class="tp-rd" style="font-size:14px;font-weight:700;color:#134E4A;">{{ r.type }}</span><span style="{{ r.badge }}">{{ r.statusLabel }}</span><span style="font-size:11px;color:#A8A096;">{{ r.stepLabel }}</span></div>
+                              <div style="font-size:12.5px;color:#857C70;">{{ r.detail }}</div>
+                            </div>
+                            <div style="text-align:right;flex:none;"><div class="tp-num" style="font-size:12px;color:#A8A096;">{{ r.date }}</div>
+                              <sc-if value="{{ r.canCancel }}" hint-placeholder-val="{{ false }}"><button onClick="{{ r.onCancel }}" style="margin-top:6px;height:30px;padding:0 14px;border:1px solid #FCA5A5;border-radius:9px;background:#fff;color:#DC2626;font-size:12px;font-weight:700;font-family:'M PLUS Rounded 1c',sans-serif;cursor:pointer;">取消</button></sc-if>
+                            </div>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ noReqList }}" hint-placeholder-val="{{ false }}">
+                      <div style="background:#fff;border:1px dashed #D8CFBE;border-radius:16px;padding:48px;text-align:center;color:#A8A096;"><div style="font-size:14px;font-weight:700;color:#857C70;margin-bottom:4px;">該当する申請はありません</div><div style="font-size:12.5px;">フィルタを変更するか、新規申請を作成してください。</div></div>
+                    </sc-if>
+                  </div>
+                </sc-if>
+
+                <!-- APPROVALS -->
+                <sc-if value="{{ screenIs.approve }}" hint-placeholder-val="{{ false }}">
+                  <div style="max-width:920px;margin:0 auto;">
+                    <sc-if value="{{ hasApprovals }}" hint-placeholder-val="{{ true }}">
+                      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                        <div style="font-size:13px;color:#857C70;">承認待ちの申請を処理します。差戻しにはコメントが必要です。</div>
+                        <button onClick="{{ approveAll }}" class="tp-rd" style="height:40px;padding:0 18px;border:1px solid #99F6E4;border-radius:11px;background:#F0FDFA;color:#0F766E;font-size:13px;font-weight:700;cursor:pointer;">一括承認</button>
+                      </div>
+                      <div style="display:flex;flex-direction:column;gap:12px;">
+                        <sc-for list="{{ approvalsList }}" as="a" hint-placeholder-count="3">
+                          <div style="background:#fff;border:1px solid #ECE7DE;border-radius:14px;padding:18px 20px;">
+                            <div style="display:flex;align-items:center;gap:13px;margin-bottom:14px;">
+                              <div class="tp-rd" style="width:38px;height:38px;border-radius:11px;background:#CCFBF1;color:#0F766E;font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;flex:none;">{{ a.initial }}</div>
+                              <div style="flex:1;min-width:0;">
+                                <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:14px;font-weight:700;color:#44403C;">{{ a.name }}</span><span style="font-size:11px;color:#A8A096;">{{ a.dept }}</span><sc-if value="{{ a.proxy }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px;font-weight:700;color:#7C3AED;background:#F5F3FF;border:1px solid #DDD6FE;border-radius:7px;padding:1px 7px;">代理承認</span></sc-if></div>
+                                <div style="font-size:12.5px;color:#857C70;margin-top:2px;"><span class="tp-rd" style="font-weight:700;color:#0F766E;">{{ a.type }}</span> ・ <span class="tp-num">{{ a.date }}</span> ・ {{ a.detail }}</div>
+                              </div>
+                            </div>
+                            <div style="display:flex;gap:10px;align-items:center;">
+                              <input placeholder="コメント（差戻し時は必須）" style="flex:1;height:40px;border:1px solid #E0D9CD;border-radius:10px;padding:0 13px;font-size:13px;font-family:inherit;background:#FCFBF8;outline:none;" />
+                              <button onClick="{{ a.onReject }}" class="tp-rd" style="height:40px;padding:0 18px;border:1.5px solid #FCA5A5;border-radius:10px;background:#fff;color:#DC2626;font-size:13px;font-weight:700;cursor:pointer;flex:none;">差戻し</button>
+                              <button onClick="{{ a.onApprove }}" class="tp-rd" style="height:40px;padding:0 22px;border:none;border-radius:10px;background:#0D9488;color:#fff;font-size:13px;font-weight:700;cursor:pointer;flex:none;box-shadow:0 3px 10px rgba(13,148,136,.22);">承認</button>
+                            </div>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ noApprovals }}" hint-placeholder-val="{{ false }}">
+                      <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:60px;text-align:center;">
+                        <div style="width:56px;height:56px;border-radius:50%;background:#F0FDF4;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:#10B981;font-size:26px;">✓</div>
+                        <div class="tp-rd" style="font-size:16px;font-weight:700;color:#134E4A;">承認待ちはありません</div>
+                        <div style="font-size:13px;color:#857C70;margin-top:4px;">すべての申請が処理されました。お疲れさまです。</div>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-if>
+
+                <!-- SHIFT -->
+                <sc-if value="{{ screenIs.shift }}" hint-placeholder-val="{{ false }}">
+                  <div style="max-width:1000px;margin:0 auto;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                      <div style="display:flex;align-items:center;gap:12px;"><div class="tp-rd" style="font-size:16px;font-weight:800;color:#134E4A;">6/22 〜 6/28</div><div style="display:flex;gap:6px;"><sc-for list="{{ shiftScopeTabs }}" as="t" hint-placeholder-count="2"><button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button></sc-for></div></div>
+                      <button class="tp-rd" style="height:40px;padding:0 18px;border:1px solid #99F6E4;border-radius:11px;background:#F0FDFA;color:#0F766E;font-size:13px;font-weight:700;cursor:pointer;">希望を提出</button>
+                    </div>
+                    <sc-if value="{{ isMe }}" hint-placeholder-val="{{ true }}">
+                      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:10px;">
+                        <sc-for list="{{ shiftMe }}" as="d" hint-placeholder-count="7">
+                          <div style="{{ d.cellStyle }}">
+                            <div style="font-size:11px;color:#A8A096;">{{ d.day }} <span class="tp-num">{{ d.date }}</span></div>
+                            <div class="tp-num" style="{{ d.planStyle }}">{{ d.plan }}</div>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ isDept }}" hint-placeholder-val="{{ false }}">
+                      <div style="background:#fff;border:1px solid #ECE7DE;border-radius:14px;overflow:hidden;">
+                        <div style="display:grid;grid-template-columns:120px repeat(7,1fr);background:#FAF8F4;border-bottom:1px solid #ECE7DE;">
+                          <div style="padding:11px 14px;font-size:11px;font-weight:700;color:#857C70;">メンバー</div>
+                          <sc-for list="{{ deptHead }}" as="h" hint-placeholder-count="7"><div style="padding:11px 4px;text-align:center;font-size:11px;font-weight:700;color:#857C70;">{{ h.day }}<br><span class="tp-num" style="font-weight:400;">{{ h.date }}</span></div></sc-for>
+                        </div>
+                        <sc-for list="{{ deptGrid }}" as="row" hint-placeholder-count="3">
+                          <div style="display:grid;grid-template-columns:120px repeat(7,1fr);border-bottom:1px solid #F4EFE7;">
+                            <div style="padding:13px 14px;font-size:12.5px;font-weight:700;color:#44403C;">{{ row.name }}</div>
+                            <sc-for list="{{ row.cells }}" as="c" hint-placeholder-count="7"><div style="padding:11px 4px;text-align:center;"><span class="tp-num" style="{{ c.style }}">{{ c.v }}</span></div></sc-for>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-if>
+
+                <!-- LEAVE -->
+                <sc-if value="{{ screenIs.leave }}" hint-placeholder-val="{{ false }}">
+                  <div style="max-width:1000px;margin:0 auto;">
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px;">
+                      <sc-for list="{{ leaveBalances }}" as="b" hint-placeholder-count="3">
+                        <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:20px;"><div style="font-size:12px;color:#857C70;font-weight:500;">{{ b.0 }}</div><div style="display:flex;align-items:baseline;gap:5px;margin-top:8px;"><span class="tp-num" style="font-size:34px;font-weight:700;color:#134E4A;">{{ b.1 }}</span><span style="font-size:13px;color:#A8A096;">{{ b.2 }}</span></div></div>
+                      </sc-for>
+                    </div>
+                    <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:20px;margin-bottom:16px;">
+                      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><div class="tp-rd" style="font-size:14px;font-weight:700;color:#134E4A;">年5日取得義務の進捗</div><span style="font-size:12px;font-weight:700;color:#15803D;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:3px 11px;">達成済み</span></div>
+                      <div style="height:12px;background:#F4EFE7;border-radius:6px;overflow:hidden;"><div style="width:100%;height:100%;background:#10B981;border-radius:6px;"></div></div>
+                      <div style="font-size:12px;color:#857C70;margin-top:8px;">今年度取得 <span class="tp-num" style="font-weight:700;color:#44403C;">6.0</span> 日 ／ 義務 5日</div>
+                    </div>
+                    <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:20px;">
+                      <div class="tp-rd" style="font-size:14px;font-weight:700;color:#134E4A;margin-bottom:12px;">取得履歴</div>
+                      <sc-for list="{{ leaveHistory }}" as="h" hint-placeholder-count="4">
+                        <div style="display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid #F4EFE7;"><span class="tp-num" style="font-size:12.5px;color:#857C70;width:90px;">{{ h.0 }}</span><span style="flex:1;font-size:13px;font-weight:500;color:#44403C;">{{ h.1 }}</span><span style="font-size:12px;color:#857C70;">{{ h.2 }}</span><span style="font-size:11px;font-weight:700;color:#15803D;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:2px 9px;">{{ h.3 }}</span></div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <!-- WORK PATTERN -->
+                <sc-if value="{{ screenIs.wpattern }}" hint-placeholder-val="{{ false }}">
+                  <div style="max-width:1040px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;">
+                    <div style="display:flex;flex-direction:column;gap:16px;">
+                      <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:20px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;"><div class="tp-rd" style="font-size:14px;font-weight:700;color:#134E4A;">勤務形態テンプレート</div><button class="tp-rd" style="height:32px;padding:0 13px;border:none;border-radius:9px;background:#0D9488;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">＋ 追加</button></div>
+                        <div style="display:flex;flex-direction:column;gap:10px;">
+                          <sc-for list="{{ wpTemplates }}" as="t" hint-placeholder-count="4">
+                            <div style="display:flex;align-items:center;gap:12px;padding:13px 14px;border:1px solid #ECE7DE;border-radius:12px;background:#FCFBF8;">
+                              <div style="flex:1;"><div class="tp-rd" style="font-size:13.5px;font-weight:700;color:#134E4A;">{{ t.0 }}</div><div style="font-size:11.5px;color:#857C70;margin-top:1px;">{{ t.1 }}</div></div>
+                              <span style="{{ t.badge }}">{{ t.badgeLabel }}</span>
+                            </div>
+                          </sc-for>
+                        </div>
+                      </div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:16px;">
+                      <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:20px;">
+                        <div class="tp-rd" style="font-size:14px;font-weight:700;color:#134E4A;margin-bottom:14px;">就業ルール（フレックス）</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px;">
+                          <div><label style="font-size:11.5px;font-weight:700;color:#5C5750;display:block;margin-bottom:6px;">所定労働時間</label><div style="display:flex;align-items:center;gap:6px;"><input value="8:00" style="width:100%;height:40px;border:1px solid #E0D9CD;border-radius:10px;padding:0 12px;font-size:13px;font-family:'JetBrains Mono',monospace;background:#FCFBF8;outline:none;" /></div></div>
+                          <div><label style="font-size:11.5px;font-weight:700;color:#5C5750;display:block;margin-bottom:6px;">休憩</label><input value="60分" style="width:100%;height:40px;border:1px solid #E0D9CD;border-radius:10px;padding:0 12px;font-size:13px;font-family:inherit;background:#FCFBF8;outline:none;" /></div>
+                          <div><label style="font-size:11.5px;font-weight:700;color:#5C5750;display:block;margin-bottom:6px;">丸め単位</label><input value="15分" style="width:100%;height:40px;border:1px solid #E0D9CD;border-radius:10px;padding:0 12px;font-size:13px;font-family:inherit;background:#FCFBF8;outline:none;" /></div>
+                          <div><label style="font-size:11.5px;font-weight:700;color:#5C5750;display:block;margin-bottom:6px;">丸め方法</label><input value="切り捨て" style="width:100%;height:40px;border:1px solid #E0D9CD;border-radius:10px;padding:0 12px;font-size:13px;font-family:inherit;background:#FCFBF8;outline:none;" /></div>
+                        </div>
+                      </div>
+                      <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:20px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;"><div class="tp-rd" style="font-size:14px;font-weight:700;color:#134E4A;">従業員への割当（有効期間つき）</div></div>
+                        <div style="display:flex;flex-direction:column;gap:8px;">
+                          <sc-for list="{{ wpAssign }}" as="a" hint-placeholder-count="3">
+                            <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid #ECE7DE;border-radius:11px;"><span style="font-size:12.5px;font-weight:700;color:#44403C;width:80px;">{{ a.0 }}</span><span style="font-size:11.5px;color:#0F766E;font-weight:700;background:#F0FDFA;border:1px solid #CCFBF1;border-radius:7px;padding:2px 9px;">{{ a.1 }}</span><span class="tp-num" style="flex:1;text-align:right;font-size:11px;color:#A8A096;">{{ a.2 }}</span></div>
+                          </sc-for>
+                        </div>
+                        <button class="tp-rd" style="margin-top:12px;width:100%;height:38px;border:1px dashed #99F6E4;border-radius:11px;background:#F0FDFA;color:#0F766E;font-size:13px;font-weight:700;cursor:pointer;">＋ 割当を追加（期間指定）</button>
+                      </div>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <!-- RBAC -->
+                <sc-if value="{{ screenIs.rbac }}" hint-placeholder-val="{{ false }}">
+                  <div style="max-width:1040px;margin:0 auto;display:grid;grid-template-columns:280px 1fr;gap:18px;align-items:start;">
+                    <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:18px;">
+                      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><div class="tp-rd" style="font-size:14px;font-weight:700;color:#134E4A;">ロール</div></div>
+                      <sc-for list="{{ rbacRoleList }}" as="r" hint-placeholder-count="5">
+                        <div onClick="{{ r.onClick }}" style="{{ r.style }}"><span class="tp-rd" style="font-size:13px;font-weight:700;">{{ r.name }}</span><span style="{{ r.countStyle }}" class="tp-num">{{ r.count }}名</span></div>
+                      </sc-for>
+                      <button class="tp-rd" style="margin-top:8px;width:100%;height:38px;border:1px dashed #99F6E4;border-radius:11px;background:#F0FDFA;color:#0F766E;font-size:13px;font-weight:700;cursor:pointer;">テンプレートを複製</button>
+                    </div>
+                    <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:20px;">
+                      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><div class="tp-rd" style="font-size:15px;font-weight:800;color:#134E4A;">{{ rbacRoleName }}</div></div>
+                      <div style="font-size:12px;color:#857C70;margin-bottom:16px;">機能ごとに、扱えるデータ範囲（自分／部署／拠点／全社）を設定します。</div>
+                      <div style="display:flex;flex-direction:column;">
+                        <sc-for list="{{ rbacMatrix }}" as="m" hint-placeholder-count="10">
+                          <div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #F4EFE7;"><span style="font-size:13px;color:#44403C;font-weight:500;">{{ m.feature }}</span><span style="{{ m.style }}">{{ m.scope }}</span></div>
+                        </sc-for>
+                      </div>
+                      <div style="margin-top:14px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:11px;padding:11px 14px;display:flex;gap:9px;align-items:center;"><span style="color:#F59E0B;font-weight:700;">!</span><span style="font-size:12px;color:#B45309;">管理権限を持つロールが最低1つ必要です（誤って全消しできません）。</span></div>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <!-- CLOSE / CSV -->
+                <sc-if value="{{ screenIs.close }}" hint-placeholder-val="{{ false }}">
+                  <div style="max-width:1000px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;">
+                    <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:22px;">
+                      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;"><div class="tp-rd" style="font-size:15px;font-weight:800;color:#134E4A;">月次締め</div><span class="tp-num" style="font-size:13px;font-weight:700;color:#0F766E;background:#F0FDFA;border:1px solid #CCFBF1;border-radius:8px;padding:3px 11px;">2026-06</span></div>
+                      <div style="font-size:12.5px;color:#857C70;margin:6px 0 16px;">締め前チェックの結果を確認してください。</div>
+                      <div style="display:flex;flex-direction:column;gap:10px;">
+                        <sc-for list="{{ closeChecks }}" as="c" hint-placeholder-count="3">
+                          <div style="{{ c.wrap }}"><span style="{{ c.iconStyle }}">{{ c.icon }}</span><span style="flex:1;font-size:13px;color:#44403C;font-weight:500;">{{ c.label }}</span><span class="tp-num" style="font-size:13px;font-weight:700;color:#44403C;">{{ c.val }}</span></div>
+                        </sc-for>
+                      </div>
+                      <sc-if value="{{ isPreClose }}" hint-placeholder-val="{{ true }}">
+                        <button onClick="{{ runClose }}" class="tp-rd" style="margin-top:18px;width:100%;height:48px;border:none;border-radius:13px;background:#0D9488;color:#fff;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(13,148,136,.25);">この月を締める</button>
+                      </sc-if>
+                      <sc-if value="{{ isClosing }}" hint-placeholder-val="{{ false }}">
+                        <div style="margin-top:18px;"><div style="height:14px;background:#F4EFE7;border-radius:7px;overflow:hidden;"><div style="{{ closeBarStyle }}"></div></div><div style="text-align:center;font-size:12.5px;color:#857C70;margin-top:8px;">締め処理中… <span class="tp-num">{{ closeProgressNum }}</span>%</div></div>
+                      </sc-if>
+                      <sc-if value="{{ isClosed }}" hint-placeholder-val="{{ false }}">
+                        <div style="margin-top:18px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:13px;padding:16px;text-align:center;"><div style="font-size:14px;font-weight:700;color:#15803D;">✓ 2026-06 を締めました</div><div style="font-size:12px;color:#857C70;margin-top:3px;">締め後はロックされ、再計算には再オープンが必要です。</div><button onClick="{{ reopenClose }}" class="tp-rd" style="margin-top:12px;height:36px;padding:0 18px;border:1px solid #E0D9CD;border-radius:10px;background:#fff;color:#5C5750;font-size:12.5px;font-weight:700;cursor:pointer;">再オープン</button></div>
+                      </sc-if>
+                    </div>
+                    <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:22px;">
+                      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;"><div class="tp-rd" style="font-size:15px;font-weight:800;color:#134E4A;">CSV出力</div><div style="display:flex;gap:6px;"><sc-for list="{{ encTabs }}" as="e" hint-placeholder-count="2"><button onClick="{{ e.onClick }}" style="{{ e.style }}">{{ e.label }}</button></sc-for></div></div>
+                      <label style="font-size:11.5px;font-weight:700;color:#5C5750;display:block;margin-bottom:6px;">マッピング</label>
+                      <div style="height:42px;border:1px solid #E0D9CD;border-radius:11px;background:#FCFBF8;display:flex;align-items:center;padding:0 14px;font-size:13px;color:#44403C;margin-bottom:16px;">給与システムA 連携フォーマット ▾</div>
+                      <div style="border:1px solid #ECE7DE;border-radius:11px;overflow:auto;">
+                        <div style="display:flex;background:#FAF8F4;border-bottom:1px solid #ECE7DE;">
+                          <sc-for list="{{ csvHead }}" as="h" hint-placeholder-count="7"><div style="flex:none;width:88px;padding:9px 10px;font-size:10.5px;font-weight:700;color:#857C70;white-space:nowrap;">{{ h.v }}</div></sc-for>
+                        </div>
+                        <sc-for list="{{ csvRows }}" as="row" hint-placeholder-count="3">
+                          <div style="display:flex;border-bottom:1px solid #F4EFE7;">
+                            <sc-for list="{{ row.cells }}" as="c" hint-placeholder-count="7"><div class="tp-num" style="flex:none;width:88px;padding:9px 10px;font-size:11px;color:#44403C;white-space:nowrap;">{{ c.v }}</div></sc-for>
+                          </div>
+                        </sc-for>
+                      </div>
+                      <button onClick="{{ downloadCsv }}" class="tp-rd" style="margin-top:16px;width:100%;height:46px;border:none;border-radius:12px;background:#134E4A;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">CSVをダウンロード</button>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <!-- PLACEHOLDER for not-yet-built screens -->
+                <sc-if value="{{ screenIs.placeholder }}" hint-placeholder-val="{{ false }}">
+                  <div style="max-width:900px;margin:0 auto;">
+                    <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:48px;text-align:center;color:#A8A096;">
+                      <div style="width:52px;height:52px;border-radius:14px;background:#F0FDFA;border:1px solid #CCFBF1;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;color:#0F766E;">{{ deskIcon }}</div>
+                      <div class="tp-rd" style="font-size:16px;font-weight:700;color:#134E4A;margin-bottom:6px;">{{ screenLabel }}</div>
+                      <div style="font-size:13px;line-height:1.7;">この画面は「一覧 ＋ 詳細／編集」の標準パターンで、<br>同じデザイン言語を適用します。詳細実装はご要望に応じて展開します。</div>
+                    </div>
+                  </div>
+                </sc-if>
+
+              </div>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+
+    <!-- ================= PHONE FRAME ================= -->
+    <div style="flex:none;width:392px;">
+      <div style="font-size:12px;font-weight:700;letter-spacing:.06em;color:#8a857c;margin-bottom:11px;display:flex;align-items:center;gap:8px;">
+        <span style="display:inline-block;width:7px;height:7px;border-radius:2px;background:#0D9488;"></span>スマートフォン
+      </div>
+      <div style="width:392px;height:812px;background:#1c1a17;border-radius:46px;padding:11px;box-shadow:0 18px 50px rgba(31,28,24,.22);">
+        <div style="width:100%;height:100%;background:#FAF8F4;border-radius:36px;overflow:hidden;position:relative;display:flex;flex-direction:column;">
+          <!-- status bar -->
+          <div style="height:38px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 26px;background:transparent;position:relative;z-index:5;">
+            <span class="tp-num" style="font-size:13px;font-weight:700;color:#134E4A;">{{ clockHM }}</span>
+            <div style="position:absolute;left:50%;top:9px;transform:translateX(-50%);width:96px;height:22px;background:#1c1a17;border-radius:14px;"></div>
+            <span style="font-size:12px;color:#134E4A;">5G&nbsp;&nbsp;100%</span>
+          </div>
+
+          <!-- GUEST mobile login -->
+          <sc-if value="{{ guest }}" hint-placeholder-val="{{ true }}">
+            <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 26px;">
+              <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:28px;">
+                <svg width="56" height="56" viewBox="0 0 40 40" fill="none"><rect width="40" height="40" rx="13" fill="#0D9488"/><circle cx="20" cy="20" r="6" fill="#fff"/><path d="M20 8a12 12 0 0 1 11.5 8.6" stroke="#fff" stroke-width="2.8" stroke-linecap="round"/></svg>
+                <div class="tp-rd" style="font-size:25px;font-weight:800;color:#134E4A;margin-top:13px;">Tempica</div>
+                <div style="font-size:12.5px;color:#857C70;margin-top:3px;">勤怠管理システム</div>
+              </div>
+              <label style="font-size:12px;font-weight:700;color:#5C5750;display:block;margin-bottom:6px;">メールアドレス</label>
+              <input value="{{ loginEmail }}" onInput="{{ onEmail }}" style="width:100%;height:48px;border:1px solid #E0D9CD;border-radius:13px;padding:0 14px;font-size:15px;font-family:inherit;background:#fff;outline:none;margin-bottom:14px;" />
+              <label style="font-size:12px;font-weight:700;color:#5C5750;display:block;margin-bottom:6px;">パスワード</label>
+              <input type="password" value="{{ loginPw }}" onInput="{{ onPw }}" style="width:100%;height:48px;border:1px solid #E0D9CD;border-radius:13px;padding:0 14px;font-size:15px;font-family:inherit;background:#fff;outline:none;margin-bottom:20px;" />
+              <button onClick="{{ doLogin }}" class="tp-rd" style="width:100%;height:50px;border:none;border-radius:14px;background:#0D9488;color:#fff;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(13,148,136,.28);">ログイン</button>
+            </div>
+          </sc-if>
+
+          <!-- AUTHED mobile -->
+          <sc-if value="{{ authed }}" hint-placeholder-val="{{ false }}">
+            <!-- m header -->
+            <div style="flex:none;background:#fff;border-bottom:1px solid #ECE7DE;padding:6px 18px 12px;display:flex;align-items:center;gap:10px;">
+              <div class="tp-rd" style="font-size:17px;font-weight:800;color:#134E4A;flex:1;">{{ mScreenLabel }}</div>
+              <div style="position:relative;width:34px;height:34px;border-radius:10px;background:#FAF8F4;border:1px solid #ECE7DE;display:flex;align-items:center;justify-content:center;">{{ bellIcon }}<span style="position:absolute;top:-4px;right:-4px;background:#EF4444;color:#fff;font-size:9px;font-weight:700;border-radius:8px;padding:1px 5px;" class="tp-num">3</span></div>
+              <div class="tp-rd" style="width:34px;height:34px;border-radius:11px;background:#CCFBF1;color:#0F766E;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;">{{ userInitial }}</div>
+            </div>
+
+            <div class="tp-scroll" style="flex:1;min-height:0;padding:18px 16px 16px;">
+              <!-- m dashboard -->
+              <sc-if value="{{ screenIs.dashboard }}" hint-placeholder-val="{{ true }}">
+                <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:18px;margin-bottom:14px;">
+                  <div style="font-size:12px;color:#857C70;">本日の勤務 ・ <span style="color:#10B981;font-weight:700;">{{ punchStatusLabel }}</span></div>
+                  <div style="display:flex;align-items:baseline;gap:6px;margin-top:8px;"><span class="tp-num" style="font-size:36px;font-weight:700;color:#134E4A;">{{ workedLabel }}</span><span style="font-size:13px;color:#A8A096;">/ 8:00</span></div>
+                </div>
+                <div style="display:flex;gap:12px;margin-bottom:14px;">
+                  <div style="flex:1;background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:16px;"><div style="font-size:11px;color:#857C70;">承認待ち</div><div class="tp-num" style="font-size:26px;font-weight:700;color:#134E4A;margin-top:4px;">{{ pendingCount }}<span style="font-size:12px;color:#A8A096;font-weight:400;"> 件</span></div></div>
+                  <div style="flex:1;background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:16px;"><div style="font-size:11px;color:#857C70;">有給残</div><div class="tp-num" style="font-size:26px;font-weight:700;color:#134E4A;margin-top:4px;">14<span style="font-size:12px;color:#A8A096;font-weight:400;"> 日</span></div></div>
+                </div>
+                <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:18px;">
+                  <div class="tp-rd" style="font-size:13px;font-weight:700;color:#134E4A;margin-bottom:12px;">アラート</div>
+                  <sc-for list="{{ alerts }}" as="a" hint-placeholder-count="2">
+                    <div style="{{ a.wrap }}"><span style="{{ a.dot }}"></span><div style="flex:1;"><div style="font-size:12.5px;font-weight:700;color:#44403C;">{{ a.title }}</div><div style="font-size:11px;color:#857C70;margin-top:1px;">{{ a.desc }}</div></div></div>
+                  </sc-for>
+                </div>
+              </sc-if>
+
+              <!-- m punch -->
+              <sc-if value="{{ screenIs.punch }}" hint-placeholder-val="{{ false }}">
+                <div style="background:#fff;border:1px solid #ECE7DE;border-radius:20px;padding:24px 18px;text-align:center;">
+                  <div style="font-size:12px;color:#857C70;">{{ clockDate }}</div>
+                  <div class="tp-num" style="font-size:52px;font-weight:700;color:#134E4A;line-height:1.1;margin:4px 0;">{{ clock }}</div>
+                  <div style="display:inline-flex;align-items:center;gap:6px;background:#F0FDFA;border:1px solid #99F6E4;border-radius:20px;padding:4px 13px;margin-bottom:20px;"><span style="width:8px;height:8px;border-radius:50%;background:#10B981;"></span><span style="font-size:12.5px;font-weight:700;color:#0F766E;">{{ punchStatusLabel }}</span></div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <sc-for list="{{ bigPunchButtons }}" as="b" hint-placeholder-count="4">
+                      <button onClick="{{ b.onClick }}" disabled="{{ b.disabled }}" class="tp-rd" style="{{ b.mStyle }}">{{ b.label }}</button>
+                    </sc-for>
+                  </div>
+                  <div style="display:flex;align-items:center;justify-content:center;gap:5px;margin-top:16px;font-size:11px;color:#A8A096;">{{ pinIcon }}<span>GPS取得済み</span></div>
+                </div>
+              </sc-if>
+
+              <!-- m myatt -->
+              <sc-if value="{{ screenIs.myatt }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:12px;"><button style="width:30px;height:30px;border-radius:9px;border:1px solid #E0D9CD;background:#fff;color:#857C70;">‹</button><div class="tp-rd" style="font-size:16px;font-weight:800;color:#134E4A;">2026年 6月</div><button style="width:30px;height:30px;border-radius:9px;border:1px solid #E0D9CD;background:#fff;color:#857C70;">›</button></div>
+                <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;"><sc-for list="{{ weekHead }}" as="w" hint-placeholder-count="7"><div style="{{ w.style }}">{{ w.w }}</div></sc-for></div>
+                <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">
+                  <sc-for list="{{ calCells }}" as="c" hint-placeholder-count="30">
+                    <sc-if value="{{ c.blank }}" hint-placeholder-val="{{ false }}"><div></div></sc-if>
+                    <sc-if value="{{ c.show }}" hint-placeholder-val="{{ true }}"><div onClick="{{ c.onClick }}" style="{{ c.mStyle }}"><span class="tp-num" style="font-size:12px;font-weight:600;">{{ c.n }}</span><sc-if value="{{ c.tag }}" hint-placeholder-val="{{ false }}"><span style="{{ c.tagStyle }}">{{ c.tag }}</span></sc-if></div></sc-if>
+                  </sc-for>
+                </div>
+                <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:16px;margin-top:14px;">
+                  <div class="tp-rd" style="font-size:13px;font-weight:700;color:#134E4A;margin-bottom:10px;">月次サマリ</div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><sc-for list="{{ monthSummary }}" as="m" hint-placeholder-count="4"><div style="background:#FAF8F4;border-radius:10px;padding:9px 11px;"><div style="font-size:10.5px;color:#857C70;">{{ m.0 }}</div><div class="tp-num" style="font-size:18px;font-weight:700;color:#134E4A;">{{ m.1 }}</div></div></sc-for></div>
+                </div>
+              </sc-if>
+
+              <!-- m req list -->
+              <sc-if value="{{ screenIs.req }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px;"><sc-for list="{{ reqFilterTabs }}" as="f" hint-placeholder-count="4"><button onClick="{{ f.onClick }}" style="{{ f.mStyle }}">{{ f.label }}</button></sc-for></div>
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                  <sc-for list="{{ reqList }}" as="r" hint-placeholder-count="3">
+                    <div style="background:#fff;border:1px solid #ECE7DE;border-radius:14px;padding:14px;">
+                      <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;"><span class="tp-rd" style="font-size:13.5px;font-weight:700;color:#134E4A;flex:1;">{{ r.type }}</span><span style="{{ r.badge }}">{{ r.statusLabel }}</span></div>
+                      <div style="font-size:12px;color:#857C70;">{{ r.detail }}</div>
+                      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;"><span class="tp-num" style="font-size:11px;color:#A8A096;">{{ r.date }}</span><sc-if value="{{ r.canCancel }}" hint-placeholder-val="{{ false }}"><button onClick="{{ r.onCancel }}" style="height:28px;padding:0 12px;border:1px solid #FCA5A5;border-radius:8px;background:#fff;color:#DC2626;font-size:11.5px;font-weight:700;font-family:'M PLUS Rounded 1c',sans-serif;">取消</button></sc-if></div>
+                    </div>
+                  </sc-for>
+                </div>
+                <button onClick="{{ goReqNew }}" class="tp-rd" style="margin-top:14px;width:100%;height:46px;border:none;border-radius:13px;background:#0D9488;color:#fff;font-size:14px;font-weight:700;box-shadow:0 4px 12px rgba(13,148,136,.25);">＋ 新規申請</button>
+              </sc-if>
+
+              <!-- m reqnew -->
+              <sc-if value="{{ screenIs.reqnew }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px;"><sc-for list="{{ reqTabs }}" as="t" hint-placeholder-count="6"><button onClick="{{ t.onClick }}" style="{{ t.mStyle }}">{{ t.label }}</button></sc-for></div>
+                <div style="background:#fff;border:1px solid #ECE7DE;border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:13px;">
+                  <div><label style="font-size:11.5px;font-weight:700;color:#5C5750;display:block;margin-bottom:6px;">対象日 *</label><input value="2026/06/24" style="width:100%;height:44px;border:1px solid #E0D9CD;border-radius:11px;padding:0 13px;font-size:14px;font-family:'JetBrains Mono',monospace;background:#FCFBF8;outline:none;" /></div>
+                  <sc-for list="{{ reqExtra }}" as="x" hint-placeholder-count="2"><div><label style="font-size:11.5px;font-weight:700;color:#5C5750;display:block;margin-bottom:6px;">{{ x.0 }}</label><input value="{{ x.1 }}" style="width:100%;height:44px;border:1px solid #E0D9CD;border-radius:11px;padding:0 13px;font-size:14px;background:#FCFBF8;outline:none;" /></div></sc-for>
+                  <div><label style="font-size:11.5px;font-weight:700;color:#5C5750;display:block;margin-bottom:6px;">理由 *</label><textarea value="{{ reqReason }}" onInput="{{ onReason }}" placeholder="申請理由" style="width:100%;height:72px;border:1px solid #E0D9CD;border-radius:11px;padding:10px 13px;font-size:14px;font-family:inherit;background:#FCFBF8;outline:none;resize:none;"></textarea></div>
+                </div>
+                <button onClick="{{ submitRequest }}" class="tp-rd" style="margin-top:14px;width:100%;height:48px;border:none;border-radius:13px;background:#0D9488;color:#fff;font-size:15px;font-weight:700;box-shadow:0 4px 12px rgba(13,148,136,.25);">申請を送信</button>
+              </sc-if>
+
+              <!-- m approve -->
+              <sc-if value="{{ screenIs.approve }}" hint-placeholder-val="{{ false }}">
+                <sc-if value="{{ hasApprovals }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;flex-direction:column;gap:10px;">
+                    <sc-for list="{{ approvalsList }}" as="a" hint-placeholder-count="3">
+                      <div style="background:#fff;border:1px solid #ECE7DE;border-radius:14px;padding:15px;">
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;"><div class="tp-rd" style="width:34px;height:34px;border-radius:10px;background:#CCFBF1;color:#0F766E;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex:none;">{{ a.initial }}</div><div style="flex:1;min-width:0;"><div style="font-size:13.5px;font-weight:700;color:#44403C;">{{ a.name }}</div><div style="font-size:11.5px;color:#857C70;"><span style="color:#0F766E;font-weight:700;">{{ a.type }}</span> ・ {{ a.date }}</div></div></div>
+                        <div style="font-size:12px;color:#857C70;margin-bottom:10px;">{{ a.detail }}</div>
+                        <div style="display:flex;gap:8px;"><button onClick="{{ a.onReject }}" class="tp-rd" style="flex:1;height:40px;border:1.5px solid #FCA5A5;border-radius:11px;background:#fff;color:#DC2626;font-size:13px;font-weight:700;">差戻し</button><button onClick="{{ a.onApprove }}" class="tp-rd" style="flex:1.4;height:40px;border:none;border-radius:11px;background:#0D9488;color:#fff;font-size:13px;font-weight:700;">承認</button></div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ noApprovals }}" hint-placeholder-val="{{ false }}"><div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:40px 20px;text-align:center;"><div style="width:48px;height:48px;border-radius:50%;background:#F0FDF4;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:#10B981;font-size:22px;">✓</div><div class="tp-rd" style="font-size:14px;font-weight:700;color:#134E4A;">承認待ちはありません</div></div></sc-if>
+              </sc-if>
+
+              <!-- m shift -->
+              <sc-if value="{{ screenIs.shift }}" hint-placeholder-val="{{ false }}">
+                <div class="tp-rd" style="font-size:15px;font-weight:800;color:#134E4A;margin-bottom:12px;">今週のシフト（6/22〜）</div>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                  <sc-for list="{{ shiftMe }}" as="d" hint-placeholder-count="7">
+                    <div style="{{ d.mRowStyle }}"><div style="font-size:12.5px;font-weight:700;color:#44403C;">{{ d.day }} <span class="tp-num" style="color:#A8A096;font-weight:400;">6/{{ d.date }}</span></div><div class="tp-num" style="{{ d.planStyle }}">{{ d.plan }}</div></div>
+                  </sc-for>
+                </div>
+                <button class="tp-rd" style="margin-top:14px;width:100%;height:46px;border:1.5px solid #99F6E4;border-radius:13px;background:#F0FDFA;color:#0F766E;font-size:14px;font-weight:700;">希望を提出</button>
+              </sc-if>
+
+              <!-- m leave -->
+              <sc-if value="{{ screenIs.leave }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:14px;">
+                  <sc-for list="{{ leaveBalances }}" as="b" hint-placeholder-count="3"><div style="background:#fff;border:1px solid #ECE7DE;border-radius:14px;padding:16px;display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;color:#857C70;font-weight:500;">{{ b.0 }}</span><span><span class="tp-num" style="font-size:26px;font-weight:700;color:#134E4A;">{{ b.1 }}</span><span style="font-size:12px;color:#A8A096;"> {{ b.2 }}</span></span></div></sc-for>
+                </div>
+                <div style="background:#fff;border:1px solid #ECE7DE;border-radius:14px;padding:16px;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><div class="tp-rd" style="font-size:13px;font-weight:700;color:#134E4A;">年5日取得義務</div><span style="font-size:11px;font-weight:700;color:#15803D;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;padding:2px 9px;">達成済</span></div>
+                  <div style="height:10px;background:#F4EFE7;border-radius:5px;overflow:hidden;"><div style="width:100%;height:100%;background:#10B981;"></div></div>
+                  <div style="font-size:11.5px;color:#857C70;margin-top:7px;">取得 <span class="tp-num">6.0</span>日 / 義務 5日</div>
+                </div>
+              </sc-if>
+
+              <!-- m desktop-only notice -->
+              <sc-if value="{{ mDesktopOnly }}" hint-placeholder-val="{{ false }}">
+                <div style="background:#fff;border:1px solid #ECE7DE;border-radius:16px;padding:34px 20px;text-align:center;">
+                  <div style="width:46px;height:46px;border-radius:13px;background:#F0FDFA;border:1px solid #CCFBF1;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:#0F766E;">{{ deskIcon }}</div>
+                  <div class="tp-rd" style="font-size:14px;font-weight:700;color:#134E4A;">{{ mScreenLabel }}</div>
+                  <div style="font-size:12px;color:#857C70;margin-top:5px;line-height:1.6;">設定・管理系の操作は<br>PCでの利用を推奨しています。</div>
+                </div>
+              </sc-if>
+
+              <!-- m desktop-only notice end -->
+            </div>
+
+            <!-- bottom nav -->
+            <div style="flex:none;background:#fff;border-top:1px solid #ECE7DE;display:flex;padding:8px 6px 20px;">
+              <sc-for list="{{ bottomNav }}" as="b" hint-placeholder-count="5">
+                <button onClick="{{ b.onClick }}" style="{{ b.style }}">
+                  <span>{{ b.icon }}</span>
+                  <span style="font-size:10px;font-weight:700;">{{ b.label }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- toast -->
+  <sc-if value="{{ toast.show }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:50;background:#134E4A;color:#fff;border-radius:13px;padding:14px 22px;display:flex;align-items:center;gap:11px;box-shadow:0 10px 30px rgba(19,78,74,.35);">
+      <span style="width:22px;height:22px;border-radius:50%;background:#10B981;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">✓</span>
+      <span class="tp-rd" style="font-size:14px;font-weight:700;">{{ toast.msg }}</span>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1660,&quot;height&quot;:920}}">
+class Component extends DCLogic {
+  state = {
+    authed: false,
+    screen: 'login',
+    role: 'hr',
+    loginEmail: 'hr@example.com',
+    loginPw: 'password',
+    loginError: false,
+    setupStep: 0,
+    now: new Date(2026, 5, 24, 14, 32, 8),
+    punchStatus: 'working', // before/working/break/after
+    punches: [
+      { type: 'clock_in', t: new Date(2026,5,24,9,1,0) },
+      { type: 'break_start', t: new Date(2026,5,24,12,0,0) },
+      { type: 'break_end', t: new Date(2026,5,24,13,0,0) },
+    ],
+    toast: { show: false, msg: '' },
+    reqType: 'punch_fix',
+    reqReason: '',
+    reqFilter: 'all',
+    selDay: 17,
+    shiftView: 'week',
+    shiftScope: 'me',
+    rbacRole: 0,
+    closeStep: 0, // 0 pre-check, 1 closing, 2 closed
+    closeProgress: 0,
+    csvEnc: 'utf-8',
+    requests: [
+      { id:1, type:'残業申請', date:'2026/06/23', detail:'19:00まで（2.0h）・繁忙対応', status:'pending', step:1, steps:2 },
+      { id:2, type:'有給休暇', date:'2026/06/20', detail:'全日・私用のため', status:'approved', step:2, steps:2 },
+      { id:3, type:'打刻修正', date:'2026/06/18', detail:'退勤 18:30 へ修正・打刻忘れ', status:'approved', step:2, steps:2 },
+      { id:4, type:'直行直帰', date:'2026/06/16', detail:'A社訪問のため直行', status:'rejected', step:1, steps:2 },
+    ],
+    approvals: [
+      { id:11, name:'佐藤 健', dept:'営業部', type:'残業申請', date:'06/23', detail:'19:00まで（2.0h）繁忙対応', proxy:false },
+      { id:12, name:'鈴木 美咲', dept:'営業部', type:'有給休暇', date:'06/25', detail:'全日・私用のため', proxy:false },
+      { id:13, name:'田中 大輔', dept:'開発部', type:'打刻修正', date:'06/22', detail:'退勤 20:15 へ修正・打刻忘れ', proxy:true },
+    ],
+  };
+
+  componentDidMount() {
+    this._iv = setInterval(() => this.setState({ now: new Date(this.state.now.getTime() + 1000) }), 1000);
+  }
+  componentWillUnmount() { clearInterval(this._iv); if (this._tt) clearTimeout(this._tt); }
+
+  // ---------- helpers ----------
+  pad(n){ return String(n).padStart(2,'0'); }
+  fmtClock(d){ return this.pad(d.getHours())+':'+this.pad(d.getMinutes())+':'+this.pad(d.getSeconds()); }
+  fmtHM(d){ return this.pad(d.getHours())+':'+this.pad(d.getMinutes()); }
+  fmtDur(min){ const h=Math.floor(min/60), m=min%60; return h+':'+this.pad(m); }
+
+  icon(name){
+    const P = {
+      grid:[['rect',{x:3,y:3,width:7,height:7,rx:1.6}],['rect',{x:14,y:3,width:7,height:7,rx:1.6}],['rect',{x:14,y:14,width:7,height:7,rx:1.6}],['rect',{x:3,y:14,width:7,height:7,rx:1.6}]],
+      clock:[['circle',{cx:12,cy:12,r:9}],['path',{d:'M12 7.5V12l3 1.8'}]],
+      calendar:[['rect',{x:3.5,y:5,width:17,height:16,rx:2.4}],['path',{d:'M3.5 9.5h17M8 3.5v3M16 3.5v3'}]],
+      edit:[['path',{d:'M5 19h14M14.5 5.5l3 3L9 17l-4 1 1-4 8.5-8.5z'}]],
+      list:[['path',{d:'M8 6h12M8 12h12M8 18h12M3.5 6h.01M3.5 12h.01M3.5 18h.01'}]],
+      check:[['path',{d:'M5 13l4 4L19 7'}]],
+      people:[['circle',{cx:9,cy:8,r:3.2}],['path',{d:'M3.5 19a5.5 5.5 0 0 1 11 0M16 6.2a3 3 0 0 1 0 5.6M20.5 19a4.6 4.6 0 0 0-3-4.3'}]],
+      building:[['rect',{x:5,y:3.5,width:14,height:17,rx:1.6}],['path',{d:'M9 8h2M13 8h2M9 12h2M13 12h2M9 16h6'}]],
+      sliders:[['path',{d:'M4 8h10M18 8h2M4 16h2M10 16h10'}],['circle',{cx:16,cy:8,r:2.2}],['circle',{cx:8,cy:16,r:2.2}]],
+      tag:[['path',{d:'M4 4h7l9 9-7 7-9-9V4z'}],['circle',{cx:8,cy:8,r:1.4}]],
+      shield:[['path',{d:'M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3z'}]],
+      route:[['circle',{cx:6,cy:6,r:2.4}],['circle',{cx:18,cy:18,r:2.4}],['path',{d:'M6 8.5V14a4 4 0 0 0 4 4h5.5'}]],
+      lock:[['rect',{x:5,y:11,width:14,height:9,rx:2}],['path',{d:'M8 11V8a4 4 0 0 1 8 0v3'}]],
+      chart:[['path',{d:'M4 20h16M7 16v-5M12 16V7M17 16v-8'}]],
+      bell:[['path',{d:'M6.5 9a5.5 5.5 0 0 1 11 0c0 5 2 6.5 2 6.5H4.5S6.5 14 6.5 9zM10 19a2 2 0 0 0 4 0'}]],
+      pin:[['path',{d:'M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11z'}],['circle',{cx:12,cy:10,r:2.5}]],
+      menu:[['path',{d:'M4 7h16M4 12h16M4 17h16'}]],
+      book:[['path',{d:'M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3V4zM5 17a3 3 0 0 1 3-3h11'}]],
+    };
+    const items = P[name] || P.grid;
+    return React.createElement('svg', { width:18, height:18, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:1.8, strokeLinecap:'round', strokeLinejoin:'round' },
+      items.map((c,i)=>React.createElement(c[0], Object.assign({key:i}, c[1]))));
+  }
+
+  // ---------- screen registry ----------
+  screens(){
+    return {
+      dashboard:'ダッシュボード', punch:'打刻', myatt:'自分の勤怠', req:'申請一覧・状況', reqnew:'申請作成',
+      shift:'シフト・勤務予定', leave:'休暇管理', approve:'承認一覧', members:'メンバー管理', org:'組織管理',
+      wpattern:'勤務形態・就業ルール', leavetype:'休暇種別設定', rbac:'ロール・権限設定', route:'承認経路設定',
+      close:'月次締め・CSV出力', report:'レポート・帳票', audit:'監査ログ', setup:'初期セットアップ', login:'ログイン',
+    };
+  }
+  builtScreens(){ return ['dashboard','punch','myatt','reqnew','req','approve','shift','leave','wpattern','rbac','close']; }
+
+  submitRequest(){
+    const types={punch_fix:'打刻修正',overtime:'残業申請',late_early:'遅刻・早退',leave:'有給休暇',direct:'直行直帰',trip:'出張'};
+    const r={ id:Date.now(), type:types[this.state.reqType], date:'2026/06/24', detail:this.state.reqReason||'（理由未入力）', status:'pending', step:1, steps:2 };
+    this.setState({ requests:[r,...this.state.requests], screen:'req', reqReason:'' });
+    this.toast('申請を送信しました');
+  }
+  cancelRequest(id){ this.setState({ requests:this.state.requests.map(r=>r.id===id?{...r,status:'canceled'}:r) }); this.toast('申請を取り消しました'); }
+  decideApproval(id,ok){
+    this.setState({ approvals:this.state.approvals.filter(a=>a.id!==id) });
+    this.toast(ok?'承認しました':'差戻しました');
+  }
+  approveAll(){ this.setState({ approvals:[] }); this.toast('すべて承認しました'); }
+  runClose(){
+    this.setState({ closeStep:1, closeProgress:0 });
+    const iv=setInterval(()=>{
+      const p=Math.min(100,this.state.closeProgress+8);
+      this.setState({ closeProgress:p });
+      if(p>=100){ clearInterval(iv); this.setState({ closeStep:2 }); this.toast('月次を締めました'); }
+    },90);
+  }
+  reopenClose(){ this.setState({ closeStep:0, closeProgress:0 }); }
+
+  go(s){ this.setState({ screen:s }); }
+  setRole(r){
+    const allowed = this.navAllowed(r);
+    let s = this.state.screen;
+    if (this.state.authed && !allowed.includes(s)) s = 'dashboard';
+    this.setState({ role:r, screen:s });
+  }
+  doLogin(){ if(!this.state.loginEmail||!this.state.loginPw){ this.setState({loginError:true}); return; } this.setState({ authed:true, screen:'dashboard', loginError:false }); }
+
+  toast(msg){ if(this._tt) clearTimeout(this._tt); this.setState({ toast:{show:true,msg} }); this._tt=setTimeout(()=>this.setState({toast:{show:false,msg:''}}),2200); }
+
+  // punch
+  doPunch(type){
+    const t = new Date(this.state.now.getTime());
+    const labels = { clock_in:'出勤しました', break_start:'休憩を開始しました', break_end:'休憩を終了しました', clock_out:'退勤しました。お疲れさまでした' };
+    const next = { clock_in:'working', break_start:'break', break_end:'working', clock_out:'after' };
+    this.setState({ punches:[...this.state.punches,{type,t}], punchStatus:next[type] });
+    this.toast(labels[type]);
+  }
+  workedMinutes(){
+    const ps = this.state.punches;
+    const ci = ps.find(p=>p.type==='clock_in'); if(!ci) return 0;
+    const co = ps.find(p=>p.type==='clock_out');
+    const end = co ? co.t : this.state.now;
+    let total = (end - ci.t)/60000;
+    // subtract breaks
+    let bs=null, br=0;
+    ps.forEach(p=>{ if(p.type==='break_start') bs=p.t; if(p.type==='break_end'&&bs){ br+=(p.t-bs)/60000; bs=null; } });
+    if(bs) br += (this.state.now - bs)/60000;
+    return Math.max(0, Math.round(total - br));
+  }
+
+  navDef(){
+    return [
+      { id:'dashboard', label:'ダッシュボード', icon:'grid', sec:'日常', roles:['employee','manager','hr'] },
+      { id:'punch', label:'打刻', icon:'clock', sec:'日常', roles:['employee','manager','hr'] },
+      { id:'myatt', label:'自分の勤怠', icon:'calendar', sec:'日常', roles:['employee','manager','hr'] },
+      { id:'req', label:'申請・状況', icon:'edit', sec:'日常', roles:['employee','manager','hr'] },
+      { id:'shift', label:'シフト・勤務予定', icon:'list', sec:'日常', roles:['employee','manager','hr'] },
+      { id:'leave', label:'休暇管理', icon:'tag', sec:'日常', roles:['employee','manager','hr'] },
+      { id:'approve', label:'承認', icon:'check', sec:'管理', roles:['manager','hr'], badge:'3' },
+      { id:'members', label:'メンバー管理', icon:'people', sec:'管理', roles:['hr'] },
+      { id:'org', label:'組織管理', icon:'building', sec:'管理', roles:['hr'] },
+      { id:'wpattern', label:'勤務形態・就業ルール', icon:'sliders', sec:'管理', roles:['hr'] },
+      { id:'leavetype', label:'休暇種別設定', icon:'tag', sec:'管理', roles:['hr'] },
+      { id:'rbac', label:'ロール・権限設定', icon:'shield', sec:'管理', roles:['hr'] },
+      { id:'route', label:'承認経路設定', icon:'route', sec:'管理', roles:['hr'] },
+      { id:'close', label:'月次締め・CSV', icon:'lock', sec:'管理', roles:['hr'] },
+      { id:'report', label:'レポート・帳票', icon:'chart', sec:'管理', roles:['manager','hr'] },
+      { id:'audit', label:'監査ログ', icon:'book', sec:'管理', roles:['hr'] },
+    ];
+  }
+  navAllowed(role){ return this.navDef().filter(n=>n.roles.includes(role)).map(n=>n.id); }
+
+  renderVals(){
+    const S = this.state;
+    const screens = this.screens();
+    const built = this.builtScreens();
+    const navd = this.navDef().filter(n=>n.roles.includes(S.role));
+
+    // nav sections
+    const secOrder = ['日常','管理'];
+    const navSections = secOrder.map(title=>({
+      title,
+      items: navd.filter(n=>n.sec===title).map(n=>{
+        const active = S.screen===n.id || (n.id==='req' && S.screen==='reqnew');
+        return {
+          id:n.id, label:n.label, icon:this.icon(n.icon), badge:n.badge||'',
+          onClick:()=>this.go(n.id),
+          style:`display:flex;align-items:center;gap:11px;width:100%;border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:700;padding:9px 12px;border-radius:11px;margin-bottom:2px;text-align:left;`+
+            (active?`background:#0D9488;color:#fff;`:`background:transparent;color:#5C5750;`),
+        };
+      }),
+    })).filter(s=>s.items.length);
+
+    // role tabs
+    const roles = [['employee','従業員'],['manager','管理者'],['hr','人事・労務']];
+    const roleTabs = roles.map(([k,l])=>({
+      label:l, onClick:()=>this.setRole(k),
+      style:`border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:12px;font-weight:700;padding:6px 13px;border-radius:8px;`+
+        (S.role===k?`background:#0D9488;color:#fff;`:`background:transparent;color:#857C70;`),
+    }));
+
+    // screenIs
+    const cur = S.screen;
+    const screenIs = {};
+    Object.keys(screens).forEach(k=>screenIs[k]=(cur===k));
+    screenIs.placeholder = S.authed && !built.includes(cur) && cur!=='setup' && cur!=='login';
+
+    // punch buttons
+    const st = S.punchStatus;
+    const mkBtn = (type,label,kind)=>{
+      let dis=false;
+      if(type==='clock_in') dis = st!=='before';
+      if(type==='clock_out') dis = !(st==='working'||st==='break');
+      if(type==='break_start') dis = st!=='working';
+      if(type==='break_end') dis = st!=='break';
+      const base=`border-radius:12px;font-size:14px;font-weight:700;font-family:'M PLUS Rounded 1c',sans-serif;padding:13px 0;cursor:pointer;transition:.15s;`;
+      let look;
+      if(dis) look=`background:#F4EFE7;color:#C8C0B2;border:1px solid #ECE7DE;cursor:not-allowed;`;
+      else if(kind==='primary') look=`background:#0D9488;color:#fff;border:none;box-shadow:0 3px 10px rgba(13,148,136,.25);`;
+      else if(kind==='danger') look=`background:#fff;color:#DC2626;border:1.5px solid #FCA5A5;`;
+      else look=`background:#F0FDFA;color:#0F766E;border:1.5px solid #99F6E4;`;
+      return { label, onClick:()=>!dis&&this.doPunch(type), disabled:dis, style:base+look, mStyle:base.replace('13px 0','15px 0').replace('14px','15px')+look };
+    };
+    const bigPunchButtons = [ mkBtn('clock_in','出勤','primary'), mkBtn('clock_out','退勤','danger'), mkBtn('break_start','休憩開始','ghost'), mkBtn('break_end','休憩終了','ghost') ];
+    const punchButtons = bigPunchButtons.map(b=>({ ...b, style:b.style.replace('padding:13px 0','padding:11px 16px') }));
+
+    // today punches
+    const plabel = { clock_in:['出勤','#10B981'], clock_out:['退勤','#EF4444'], break_start:['休憩開始','#F59E0B'], break_end:['休憩終了','#0D9488'] };
+    const todayPunches = S.punches.map(p=>({
+      label:plabel[p.type][0], time:this.fmtClock(p.t),
+      dot:`width:10px;height:10px;border-radius:50%;background:${plabel[p.type][1]};flex:none;`,
+    }));
+
+    const worked = this.workedMinutes();
+
+    // alerts
+    const alerts = [
+      { title:'時間外労働が上限に接近', desc:'今月の残業 38時間 / 上限45時間', kind:'warn' },
+      { title:'有給取得を確認しましょう', desc:'年5日の取得義務まであと 0日（達成）', kind:'ok' },
+    ].map(a=>({
+      title:a.title, desc:a.desc,
+      wrap:`display:flex;gap:11px;align-items:flex-start;padding:11px;border-radius:11px;background:${a.kind==='warn'?'#FFFBEB':'#F0FDF4'};border:1px solid ${a.kind==='warn'?'#FDE68A':'#BBF7D0'};`,
+      dot:`width:9px;height:9px;border-radius:50%;margin-top:5px;flex:none;background:${a.kind==='warn'?'#F59E0B':'#10B981'};`,
+    }));
+
+    const badge=(txt,kind)=>{
+      const c={pending:['#FFFBEB','#B45309','#FDE68A'],approved:['#F0FDF4','#15803D','#BBF7D0'],rejected:['#FEF2F2','#B91C1C','#FECACA']}[kind];
+      return { txt, style:`font-size:11px;font-weight:700;padding:3px 10px;border-radius:9px;background:${c[0]};color:${c[1]};border:1px solid ${c[2]};` };
+    };
+    const recentRequests = [
+      { type:'残業申請', date:'06/23', status:'承認待ち', kind:'pending' },
+      { type:'有給休暇', date:'06/20', status:'承認済', kind:'approved' },
+      { type:'打刻修正', date:'06/18', status:'承認済', kind:'approved' },
+    ].map(r=>({ type:r.type, date:r.date, status:r.status, badge:badge(r.status,r.kind).style }));
+
+    // bottom nav (mobile)
+    const bn=[['dashboard','ホーム','grid'],['punch','打刻','clock'],['myatt','勤怠','calendar'],['req','申請','edit'],['menu','メニュー','menu']];
+    const bottomNav = bn.map(([id,label,ic])=>{
+      const active = S.screen===id || (id==='req'&&S.screen==='reqnew');
+      return { label, icon:this.icon(ic), onClick:()=>this.go(id==='menu'?'dashboard':id),
+        style:`flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;border:none;background:transparent;cursor:pointer;padding:4px 0;font-family:'M PLUS Rounded 1c',sans-serif;`+
+          (active?`color:#0D9488;`:`color:#A8A096;`) };
+    });
+
+    // setup
+    const setupTitles=['管理者アカウントを作成','組織情報を入力','締め日などの基本設定'];
+    const setupFieldsAll=[
+      [{label:'管理者名',ph:'山田 太郎',value:''},{label:'メールアドレス',ph:'admin@example.com',value:''},{label:'パスワード',ph:'8文字以上',value:''}],
+      [{label:'組織名',ph:'株式会社テンピカ',value:''},{label:'拠点・本社所在地',ph:'東京都…',value:''}],
+      [{label:'締め日',ph:'末日',value:''},{label:'勤怠計算期間',ph:'毎月1日〜末日',value:''}],
+    ];
+    const setupSteps=[0,1,2].map(i=>({
+      n:i+1,
+      dotStyle:`width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace;flex:none;`+(i<=S.setupStep?`background:#0D9488;color:#fff;`:`background:#F4EFE7;color:#A8A096;`),
+      barStyle:i<2?`flex:1;height:2px;background:${i<S.setupStep?'#0D9488':'#ECE7DE'};`:`display:none;`,
+    }));
+
+    // ===== MY ATTENDANCE (calendar) =====
+    const dim=30, firstW=new Date(2026,5,1).getDay();
+    const dayKind={}; // 1..30
+    for(let d=1;d<=dim;d++){ const w=new Date(2026,5,d).getDay(); dayKind[d]= (w===0||w===6)?'off': (d>24?'future':'work'); }
+    dayKind[20]='leave'; dayKind[6]='holiday'; dayKind[13]='ot'; dayKind[18]='ot';
+    const kindColor={work:['#fff','#44403C','#ECE7DE'],off:['#FAF8F4','#C8C0B2','#F4EFE7'],holiday:['#FAF8F4','#C8C0B2','#F4EFE7'],leave:['#F0FDFA','#0F766E','#99F6E4'],ot:['#FFFBEB','#B45309','#FDE68A'],future:['#fff','#D8D2C7','#F4EFE7']};
+    const kindTag={leave:'有給',ot:'残業',off:'休',holiday:'祝'};
+    const calCells=[];
+    for(let i=0;i<firstW;i++) calCells.push({blank:true,show:false,style:'background:transparent;border:none;'});
+    for(let d=1;d<=dim;d++){
+      const k=dayKind[d], c=kindColor[k], sel=(d===S.selDay);
+      calCells.push({ blank:false, show:true, n:String(d), tag:kindTag[k]||'',
+        onClick:()=>this.setState({selDay:d}),
+        style:`display:flex;flex-direction:column;gap:2px;padding:7px 8px;min-height:54px;border-radius:10px;cursor:pointer;background:${c[0]};border:1.5px solid ${sel?'#0D9488':c[2]};color:${c[1]};`,
+        mStyle:`display:flex;flex-direction:column;gap:1px;padding:5px 4px;min-height:40px;border-radius:8px;cursor:pointer;background:${c[0]};border:1.5px solid ${sel?'#0D9488':c[2]};color:${c[1]};align-items:flex-start;`,
+        tagStyle:`font-size:9px;font-weight:700;align-self:flex-start;padding:0 4px;border-radius:5px;background:${c[2]};color:${c[1]};` });
+    }
+    const selKind=dayKind[S.selDay]||'work';
+    const dayDetail = selKind==='leave'
+      ? { rows:[['区分','有給休暇（全日）'],['実働','—'],['備考','私用のため']], empty:false }
+      : selKind==='off'||selKind==='holiday' ? { rows:[], empty:true }
+      : selKind==='future' ? { rows:[], empty:true, future:true }
+      : { rows:[['出勤','09:0'+(S.selDay%6)],['退勤', selKind==='ot'?'19:1'+(S.selDay%5):'18:0'+(S.selDay%6)],['休憩','60分'],['実働', selKind==='ot'?'9:1'+(S.selDay%5):'8:0'+(S.selDay%6)],['残業', selKind==='ot'?'1:1'+(S.selDay%5):'—']], empty:false };
+
+    const weekHead=['日','月','火','水','木','金','土'].map((w,i)=>({w,style:`text-align:center;font-size:11px;font-weight:700;color:${i===0?'#EF4444':i===6?'#0D9488':'#A8A096'};padding-bottom:6px;`}));
+    const monthSummary=[['総労働','168:30'],['残業','38:00'],['出勤日数','18'],['有給取得','1.0']];
+
+    // ===== REQUEST CREATE =====
+    const reqTypes=[['punch_fix','打刻修正'],['overtime','残業'],['late_early','遅刻・早退'],['leave','休暇'],['direct','直行直帰'],['trip','出張']];
+    const reqTabs=reqTypes.map(([k,l])=>({ label:l, onClick:()=>this.setState({reqType:k}),
+      style:`border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:13px;font-weight:700;padding:9px 16px;border-radius:11px;white-space:nowrap;`+
+        (S.reqType===k?`background:#0D9488;color:#fff;`:`background:#F4EFE7;color:#857C70;`),
+      mStyle:`border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:12.5px;font-weight:700;padding:8px 14px;border-radius:10px;white-space:nowrap;flex:none;`+
+        (S.reqType===k?`background:#0D9488;color:#fff;`:`background:#F4EFE7;color:#857C70;`) }));
+    const reqExtra={ punch_fix:[['修正対象','退勤 → 18:30']], overtime:[['終了予定時刻','19:00'],['見込み時間','2.0時間']], late_early:[['区分','遅刻'],['時刻','10:30 出社']], leave:[['休暇種別','有給休暇'],['取得単位','全日 / 半休 / 時間'],['残数','14.0日（申請後 13.0日）']], direct:[['行先','A社（渋谷）']], trip:[['行先','大阪支社'],['期間','06/26 〜 06/27']] }[S.reqType]||[];
+    const balanceWarn = S.reqType==='leave';
+
+    // ===== REQUEST LIST =====
+    const stMeta={pending:['承認待ち','#FFFBEB','#B45309','#FDE68A'],approved:['承認済','#F0FDF4','#15803D','#BBF7D0'],rejected:['差戻し','#FEF2F2','#B91C1C','#FECACA'],canceled:['取消済','#F4EFE7','#857C70','#E0D9CD']};
+    const filters=[['all','すべて'],['pending','承認待ち'],['approved','承認済'],['rejected','差戻し']];
+    const reqFilterTabs=filters.map(([k,l])=>({label:l,onClick:()=>this.setState({reqFilter:k}),
+      style:`border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:12.5px;font-weight:700;padding:7px 14px;border-radius:9px;`+
+        (S.reqFilter===k?`background:#0D9488;color:#fff;`:`background:#fff;color:#857C70;border:1px solid #E0D9CD;`),
+      mStyle:`border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:12px;font-weight:700;padding:7px 13px;border-radius:9px;white-space:nowrap;flex:none;`+
+        (S.reqFilter===k?`background:#0D9488;color:#fff;`:`background:#fff;color:#857C70;border:1px solid #E0D9CD;`)}));
+    const reqList=S.requests.filter(r=>S.reqFilter==='all'||r.status===S.reqFilter).map(r=>{
+      const m=stMeta[r.status];
+      return { ...r, statusLabel:m[0], badge:`font-size:11px;font-weight:700;padding:3px 11px;border-radius:9px;background:${m[1]};color:${m[2]};border:1px solid ${m[3]};`,
+        stepLabel:r.status==='pending'?`ステップ ${r.step}/${r.steps}`:'', canCancel:r.status==='pending',
+        onCancel:()=>this.cancelRequest(r.id) };
+    });
+
+    // ===== APPROVALS =====
+    const approvalsList=S.approvals.map(a=>({ ...a,
+      onApprove:()=>this.decideApproval(a.id,true), onReject:()=>this.decideApproval(a.id,false),
+      initial:a.name.slice(0,1) }));
+
+    // ===== SHIFT =====
+    const shiftScopeTabs=[['me','個人'],['dept','部署']].map(([k,l])=>({label:l,onClick:()=>this.setState({shiftScope:k}),
+      style:`border:none;cursor:pointer;font-family:'M PLUS Rounded 1c',sans-serif;font-size:12.5px;font-weight:700;padding:7px 15px;border-radius:9px;`+(S.shiftScope===k?`background:#0D9488;color:#fff;`:`background:#fff;color:#857C70;border:1px solid #E0D9CD;`)}));
+    const wdays=[['月','22'],['火','23'],['水','24'],['木','25'],['金','26'],['土','27'],['日','28']];
+    const mePlan=['09-18','09-18','09-18','09-18','09-18','休','休'];
+    const shiftMe=wdays.map((d,i)=>{const off=mePlan[i]==='休';return {day:d[0],date:d[1],plan:mePlan[i],
+      cellStyle:`background:#fff;border:1.5px solid ${i===2?'#0D9488':'#ECE7DE'};border-radius:13px;padding:14px 10px;min-height:88px;display:flex;flex-direction:column;gap:10px;`,
+      mRowStyle:`background:#fff;border:1.5px solid ${i===2?'#0D9488':'#ECE7DE'};border-radius:12px;padding:13px 15px;display:flex;align-items:center;justify-content:space-between;`,
+      planStyle:`font-size:14px;font-weight:700;${off?'color:#C8C0B2;':'color:#134E4A;'}`};});
+    const deptHead=wdays.map(d=>({day:d[0],date:d[1]}));
+    const deptRowsRaw=[['佐藤 健',['09-18','09-18','13-22','13-22','休','09-18','休']],['鈴木 美咲',['10-19','10-19','10-19','休','10-19','休','休']],['田中 大輔',['休','09-18','09-18','09-18','09-18','休','休']]];
+    const deptGrid=deptRowsRaw.map(r=>({name:r[0],cells:r[1].map(v=>({v,style:`font-size:11.5px;font-weight:600;${v==='休'?'color:#C8C0B2;':'color:#0F766E;'}`}))}));
+
+    // ===== LEAVE =====
+    const leaveBalances=[['有給休暇','14.0','日','#0D9488'],['振替休日','1.0','日','#0F766E'],['特別休暇','3.0','日','#134E4A']];
+    const leaveHistory=[['2026/06/20','有給休暇','全日','取得済'],['2026/05/02','有給休暇','全日','取得済'],['2026/04/15','振替休日','全日','取得済'],['2026/03/22','有給休暇','半休','取得済']];
+
+    // ===== WORK PATTERN =====
+    const wpTemplatesRaw=[['固定勤務','9:00-18:00 / 休憩60分',true],['フレックス','コアタイム 11:00-15:00',true],['変形労働（1ヶ月）','月平均40h/週',false],['シフト勤務','早番/遅番/夜勤',true]];
+    const wpTemplates=wpTemplatesRaw.map(t=>({0:t[0],1:t[1],badgeLabel:t[2]?'有効':'無効',
+      badge:`font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:7px;${t[2]?'background:#F0FDF4;color:#15803D;border:1px solid #BBF7D0;':'background:#F4EFE7;color:#A8A096;border:1px solid #E0D9CD;'}`}));
+    const wpAssign=[['佐藤 健','フレックス','2026/04/01 〜'],['鈴木 美咲','固定勤務','2026/01/01 〜 2026/06/30'],['田中 大輔','シフト勤務','2026/04/01 〜']];
+
+    // ===== RBAC =====
+    const rbacRoles=[['一般従業員',8],['現場管理者',5],['人事・労務',2],['経営層',1],['システム管理者',1]];
+    const rbacFeatures=['打刻','勤怠閲覧','申請','承認','シフト編成','メンバー管理','各種設定','月次締め','CSV出力','レポート'];
+    const rbacScopes={ // per role index -> scope per feature ('' none)
+      0:['self','self','self','','request','','','','','self'],
+      1:['self','dept','self','dept','dept','','','','','dept'],
+      2:['self','org','self','org','org','org','org','org','org','org'],
+      3:['self','org','','','','','','','','org'],
+      4:['self','org','self','org','org','org','org','org','org','org'],
+    };
+    const scopeLabel={self:'自分',dept:'部署',location:'拠点',org:'全社',request:'希望のみ','':'—'};
+    const scopeColor={self:'#0D9488',dept:'#0891B2',location:'#7C3AED',org:'#0F766E',request:'#A8A096','':'#D8D2C7'};
+    const curScopes=rbacScopes[S.rbacRole]||rbacScopes[0];
+    const rbacMatrix=rbacFeatures.map((f,i)=>{const sc=curScopes[i];return{feature:f,scope:scopeLabel[sc],
+      style:`font-size:11.5px;font-weight:700;padding:4px 12px;border-radius:8px;background:${sc?'#F0FDFA':'#FAF8F4'};color:${scopeColor[sc]};border:1px solid ${sc?'#CCFBF1':'#F4EFE7'};` };});
+    const rbacRoleList=rbacRoles.map((r,i)=>({name:r[0],count:r[1],onClick:()=>this.setState({rbacRole:i}),
+      style:`display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-radius:11px;cursor:pointer;margin-bottom:6px;`+
+        (S.rbacRole===i?`background:#0D9488;color:#fff;`:`background:#fff;color:#44403C;border:1px solid #ECE7DE;`),
+      countStyle:`font-size:11px;font-weight:700;`+(S.rbacRole===i?`color:#CCFBF1;`:`color:#A8A096;`)}));
+
+    // ===== CLOSE / CSV =====
+    const closeChecks=[['未承認の申請','3件','warn'],['未打刻の日','2件','warn'],['集計済みの従業員','42名','ok']].map(c=>{const warn=c[2]==='warn';return {label:c[0],val:c[1],icon:warn?'!':'✓',
+      wrap:`display:flex;align-items:center;gap:11px;padding:12px 14px;border-radius:12px;background:${warn?'#FFFBEB':'#F0FDF4'};border:1px solid ${warn?'#FDE68A':'#BBF7D0'};`,
+      iconStyle:`width:22px;height:22px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;background:${warn?'#F59E0B':'#10B981'};`};});
+    const csvPreviewHead=['社員番号','氏名','勤務日数','総労働時間','残業時間','深夜','休日'];
+    const csvRowsRaw=[['1001','山田 花子','18','168:30','38:00','2:00','0:00'],['1002','佐藤 健','19','176:00','41:30','0:00','8:00'],['1003','鈴木 美咲','17','152:15','22:00','0:00','0:00']];
+    const csvRows=csvRowsRaw.map(r=>({cells:r.map(v=>({v}))}));
+    const csvHead=csvPreviewHead.map(v=>({v}));
+    const encTabs=[['utf-8','UTF-8'],['shift_jis','Shift_JIS']].map(([k,l])=>({label:l,onClick:()=>this.setState({csvEnc:k}),
+      style:`border:none;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;padding:7px 14px;border-radius:9px;`+(S.csvEnc===k?`background:#0D9488;color:#fff;`:`background:#fff;color:#857C70;border:1px solid #E0D9CD;`)}));
+
+    return {
+      authed:S.authed, guest:!S.authed && S.screen!=='setup',
+      mDesktopOnly:['wpattern','rbac','close','members','org','leavetype','route','report','audit'].includes(cur),
+      deskIcon:this.icon('sliders'),
+      screen:S.screen, screenLabel:screens[cur]||'', mScreenLabel:screens[cur]||'',
+      roleLabel:{employee:'一般従業員',manager:'現場管理者',hr:'人事・労務'}[S.role],
+      roleTabs, navSections, screenIs,
+      userName:'山田 花子', userInitial:'山',
+      clock:this.fmtClock(S.now), clockHM:this.fmtHM(S.now), clockDate:'2026年6月24日（水）',
+      clockInTime:'09:01',
+      greeting:'こんにちは、山田さん。今日も一日よろしくお願いします。',
+      punchStatusLabel:{before:'未出勤',working:'勤務中',break:'休憩中',after:'退勤済'}[S.punchStatus],
+      workedLabel:this.fmtDur(worked),
+      pendingCount:'3',
+      punchButtons, bigPunchButtons,
+      todayPunches, hasPunches:S.punches.length>0, noPunches:S.punches.length===0,
+      alerts, recentRequests,
+      bellIcon:this.icon('bell'), pinIcon:this.icon('pin'),
+      bottomNav,
+      loginEmail:S.loginEmail, loginPw:S.loginPw, loginError:S.loginError,
+      onEmail:(e)=>this.setState({loginEmail:e.target.value}),
+      onPw:(e)=>this.setState({loginPw:e.target.value}),
+      doLogin:()=>this.doLogin(),
+      goSetup:()=>this.setState({screen:'setup',setupStep:0}),
+      goApprove:()=>this.go('approve'), goPunch:()=>this.go('punch'), goReqList:()=>this.go('req'),
+      setupSteps, setupStepTitle:setupTitles[S.setupStep], setupFields:setupFieldsAll[S.setupStep],
+      setupNextLabel:S.setupStep<2?'次へ':'完了してログイン',
+      setupNext:()=>{ if(S.setupStep<2) this.setState({setupStep:S.setupStep+1}); else this.setState({authed:true,screen:'dashboard'}); },
+      setupBack:()=>{ if(S.setupStep>0) this.setState({setupStep:S.setupStep-1}); else this.setState({screen:'login'}); },
+      toast:S.toast,
+      // myatt
+      calCells, weekHead, monthSummary, selDayLabel:'6月'+S.selDay+'日',
+      dayRows:dayDetail.rows, dayEmpty:dayDetail.empty&&!dayDetail.future, dayFuture:!!dayDetail.future, dayHasRows:!dayDetail.empty,
+      goReqNew:()=>this.go('reqnew'),
+      // reqnew
+      reqTabs, reqExtra, balanceWarn,
+      reqReason:S.reqReason, onReason:(e)=>this.setState({reqReason:e.target.value}),
+      submitRequest:()=>this.submitRequest(),
+      // req list
+      reqFilterTabs, reqList, hasReq:reqList.length>0, noReqList:reqList.length===0,
+      // approvals
+      approvalsList, hasApprovals:S.approvals.length>0, noApprovals:S.approvals.length===0, approveAll:()=>this.approveAll(),
+      // shift
+      shiftScopeTabs, shiftMe, deptHead, deptGrid, isMe:S.shiftScope==='me', isDept:S.shiftScope==='dept',
+      // leave
+      leaveBalances, leaveHistory,
+      // wpattern
+      wpTemplates, wpAssign,
+      // rbac
+      rbacRoleList, rbacMatrix, rbacRoleName:rbacRoles[S.rbacRole][0],
+      // close
+      closeChecks, csvHead, csvRows, encTabs,
+      closeStep:S.closeStep, closeProgress:S.closeProgress+'%', closeProgressNum:String(S.closeProgress),
+      closeBarStyle:`width:${S.closeProgress}%;height:100%;background:#0D9488;border-radius:7px;transition:width .2s;`,
+      isPreClose:S.closeStep===0, isClosing:S.closeStep===1, isClosed:S.closeStep===2,
+      runClose:()=>this.runClose(), reopenClose:()=>this.reopenClose(),
+      downloadCsv:()=>this.toast('CSVをダウンロードしました'),
+    };
+  }
+}
+</script>
+</body>
+</html>
