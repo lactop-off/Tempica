@@ -1,0 +1,382 @@
+// Tempica — 汎用勤怠管理システム
+// 設計書 第IV部 A. テーブル定義 に対応する Prisma スキーマ。
+//
+// 方針:
+//  - PK は UUID (gen_random_uuid())
+//  - 各業務テーブルに org_id（組織起点）
+//  - 可変な設定は JSONB
+//  - `user` は予約語のため `app_user` を使用
+//  - ステータス類は設計書どおり String（VARCHAR）+ アプリ層の定数で表現
+//    （Postgres enum 化は将来のマイグレーション容易性のため避ける）
+//  - user_work_pattern の期間重複禁止（GiST EXCLUDE）は
+//    migrations/.../exclude_constraints.sql で別途付与し、アプリ層でも検証する。
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── 組織・ユーザー・権限 ──────────────────────────────────────────
+
+model Organization {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(200)
+  settings  Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  departments     Department[]
+  employmentTypes EmploymentType[]
+  users           AppUser[]
+  roles           Role[]
+  workPatterns    WorkPattern[]
+  workRules       WorkRule[]
+  closingPeriods  ClosingPeriod[]
+  monthlyCloses   MonthlyClose[]
+  requests        Request[]
+  approvalRoutes  ApprovalRoute[]
+  leaveTypes      LeaveType[]
+  csvMappings     CsvMapping[]
+
+  @@map("organization")
+}
+
+model Department {
+  id        String  @id @default(uuid()) @db.Uuid
+  orgId     String  @map("org_id") @db.Uuid
+  parentId  String? @map("parent_id") @db.Uuid
+  name      String  @db.VarChar(200)
+  kind      String  @default("department") @db.VarChar(20) // location / department / group
+  sortOrder Int     @default(0) @map("sort_order")
+
+  organization Organization @relation(fields: [orgId], references: [id])
+  parent       Department?  @relation("DeptTree", fields: [parentId], references: [id])
+  children     Department[] @relation("DeptTree")
+  users        AppUser[]
+
+  @@index([orgId])
+  @@map("department")
+}
+
+model EmploymentType {
+  id     String @id @default(uuid()) @db.Uuid
+  orgId  String @map("org_id") @db.Uuid
+  name   String @db.VarChar(100)
+
+  organization Organization @relation(fields: [orgId], references: [id])
+  users        AppUser[]
+
+  @@map("employment_type")
+}
+
+model AppUser {
+  id               String    @id @default(uuid()) @db.Uuid
+  orgId            String    @map("org_id") @db.Uuid
+  deptId           String?   @map("dept_id") @db.Uuid
+  employmentTypeId String?   @map("employment_type_id") @db.Uuid
+  email            String    @db.VarChar(255)
+  passwordHash     String    @map("password_hash") @db.VarChar(255)
+  name             String    @db.VarChar(120)
+  employeeCode     String?   @map("employee_code") @db.VarChar(60)
+  status           String    @default("active") @db.VarChar(20) // active / suspended / retired
+  hiredOn          DateTime? @map("hired_on") @db.Date
+  retiredOn        DateTime? @map("retired_on") @db.Date
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
+
+  organization   Organization    @relation(fields: [orgId], references: [id])
+  department     Department?     @relation(fields: [deptId], references: [id])
+  employmentType EmploymentType? @relation(fields: [employmentTypeId], references: [id])
+
+  roles             UserRole[]
+  workPatterns      UserWorkPattern[]
+  timeRecords       TimeRecord[]
+  dailySummaries    DailySummary[]
+  requests          Request[]
+  approvals         Approval[]
+  leaveBalances     LeaveBalance[]
+  shifts            Shift[]
+  notifications     Notification[]
+  closedMonths      MonthlyClose[]    @relation("ClosedBy")
+
+  @@unique([orgId, email])
+  @@index([orgId])
+  @@index([deptId])
+  @@map("app_user")
+}
+
+model Role {
+  id          String  @id @default(uuid()) @db.Uuid
+  orgId       String  @map("org_id") @db.Uuid
+  name        String  @db.VarChar(100)
+  isTemplate  Boolean @default(false) @map("is_template")
+  permissions Json    @default("[]") // [{feature, action, scope}]
+
+  organization Organization @relation(fields: [orgId], references: [id])
+  users        UserRole[]
+
+  @@unique([orgId, name])
+  @@map("role")
+}
+
+model UserRole {
+  userId String @map("user_id") @db.Uuid
+  roleId String @map("role_id") @db.Uuid
+
+  user AppUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role    @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_role")
+}
+
+// ── 勤務形態・就業ルール ──────────────────────────────────────────
+
+model WorkPattern {
+  id       String  @id @default(uuid()) @db.Uuid
+  orgId    String  @map("org_id") @db.Uuid
+  name     String  @db.VarChar(120)
+  type     String  @db.VarChar(30) // fixed / flex / variable_month / shift
+  rule     Json    @default("{}")
+  isActive Boolean @default(true) @map("is_active")
+
+  organization Organization      @relation(fields: [orgId], references: [id])
+  workRules    WorkRule[]
+  assignments  UserWorkPattern[]
+
+  @@map("work_pattern")
+}
+
+model WorkRule {
+  id               String @id @default(uuid()) @db.Uuid
+  orgId            String @map("org_id") @db.Uuid
+  workPatternId    String @map("work_pattern_id") @db.Uuid
+  scheduledMinutes Int    @default(480) @map("scheduled_minutes")
+  breakMinutes     Int    @default(60) @map("break_minutes")
+  roundingUnit     Int    @default(1) @map("rounding_unit") // 丸め単位(分)
+  roundingMethod   String @default("none") @map("rounding_method") @db.VarChar(10) // none/up/down/nearest
+  overtimeRule     Json   @default("{}") @map("overtime_rule")
+
+  organization Organization @relation(fields: [orgId], references: [id])
+  workPattern  WorkPattern  @relation(fields: [workPatternId], references: [id], onDelete: Cascade)
+
+  @@map("work_rule")
+}
+
+model UserWorkPattern {
+  id            String    @id @default(uuid()) @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  workPatternId String    @map("work_pattern_id") @db.Uuid
+  startDate     DateTime  @map("start_date") @db.Date
+  endDate       DateTime? @map("end_date") @db.Date // NULL = 現在も有効
+
+  user        AppUser     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workPattern WorkPattern @relation(fields: [workPatternId], references: [id])
+
+  // 同一ユーザーの期間重複禁止は GiST EXCLUDE 制約で別途付与（exclude_constraints.sql）
+  @@index([userId])
+  @@map("user_work_pattern")
+}
+
+model ClosingPeriod {
+  id       String @id @default(uuid()) @db.Uuid
+  orgId    String @map("org_id") @db.Uuid
+  closeDay Int    @default(31) @map("close_day") // 締め日（末日=31扱い）
+
+  organization Organization @relation(fields: [orgId], references: [id])
+
+  @@map("closing_period")
+}
+
+// ── 打刻・集計・締め ──────────────────────────────────────────────
+
+model TimeRecord {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  punchType   String   @map("punch_type") @db.VarChar(20) // clock_in/clock_out/break_start/break_end
+  punchedAt   DateTime @map("punched_at") @db.Timestamptz()
+  source      String   @default("web") @db.VarChar(20) // web/mobile
+  geoLat      Decimal? @map("geo_lat") @db.Decimal(9, 6)
+  geoLng      Decimal? @map("geo_lng") @db.Decimal(9, 6)
+  isCorrected Boolean  @default(false) @map("is_corrected")
+  requestId   String?  @map("request_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  user AppUser @relation(fields: [userId], references: [id])
+
+  @@index([userId, punchedAt])
+  @@map("time_record")
+}
+
+model DailySummary {
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String   @map("user_id") @db.Uuid
+  workDate          DateTime @map("work_date") @db.Date
+  workedMinutes     Int      @default(0) @map("worked_minutes")
+  overtimeMinutes   Int      @default(0) @map("overtime_minutes")
+  lateNightMinutes  Int      @default(0) @map("late_night_minutes")
+  holidayMinutes    Int      @default(0) @map("holiday_minutes")
+  lateMinutes       Int      @default(0) @map("late_minutes")
+  earlyLeaveMinutes Int      @default(0) @map("early_leave_minutes")
+  status            String   @default("open") @db.VarChar(20) // open/closed
+
+  user AppUser @relation(fields: [userId], references: [id])
+
+  @@unique([userId, workDate])
+  @@map("daily_summary")
+}
+
+model MonthlyClose {
+  id       String    @id @default(uuid()) @db.Uuid
+  orgId    String    @map("org_id") @db.Uuid
+  period   String    @db.Char(7) // 'YYYY-MM'
+  status   String    @default("open") @db.VarChar(20) // open/closed
+  closedBy String?   @map("closed_by") @db.Uuid
+  closedAt DateTime? @map("closed_at") @db.Timestamptz()
+
+  organization Organization @relation(fields: [orgId], references: [id])
+  closer       AppUser?     @relation("ClosedBy", fields: [closedBy], references: [id])
+
+  @@unique([orgId, period])
+  @@map("monthly_close")
+}
+
+// ── 申請・承認 ────────────────────────────────────────────────────
+
+model Request {
+  id          String   @id @default(uuid()) @db.Uuid
+  orgId       String   @map("org_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  type        String   @db.VarChar(30) // punch_fix/overtime/late_early/leave/direct/business_trip
+  status      String   @default("pending") @db.VarChar(20) // pending/approved/rejected/canceled
+  leaveTypeId String?  @map("leave_type_id") @db.Uuid
+  payload     Json     @default("{}")
+  currentStep Int      @default(1) @map("current_step")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  organization Organization @relation(fields: [orgId], references: [id])
+  user         AppUser      @relation(fields: [userId], references: [id])
+  leaveType    LeaveType?   @relation(fields: [leaveTypeId], references: [id])
+  approvals    Approval[]
+
+  @@index([orgId, status])
+  @@map("request")
+}
+
+model ApprovalRoute {
+  id        String @id @default(uuid()) @db.Uuid
+  orgId     String @map("org_id") @db.Uuid
+  name      String @db.VarChar(120)
+  appliesTo String @default("all") @map("applies_to") @db.VarChar(30)
+  steps     Json   @default("[]") // [{step, approver_type, approver_ref}]
+
+  organization Organization @relation(fields: [orgId], references: [id])
+
+  @@map("approval_route")
+}
+
+model Approval {
+  id         String    @id @default(uuid()) @db.Uuid
+  requestId  String    @map("request_id") @db.Uuid
+  step       Int
+  approverId String?   @map("approver_id") @db.Uuid
+  result     String    @default("pending") @db.VarChar(20) // pending/approved/rejected
+  comment    String?   @db.Text
+  actedAt    DateTime? @map("acted_at") @db.Timestamptz()
+
+  request  Request  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  approver AppUser? @relation(fields: [approverId], references: [id])
+
+  @@unique([requestId, step])
+  @@index([approverId, result])
+  @@map("approval")
+}
+
+// ── 休暇・シフト・出力・周辺 ──────────────────────────────────────
+
+model LeaveType {
+  id        String  @id @default(uuid()) @db.Uuid
+  orgId     String  @map("org_id") @db.Uuid
+  name      String  @db.VarChar(120)
+  paid      Boolean @default(true)
+  unit      String  @default("day") @db.VarChar(10) // day/half/hour
+  grantRule Json    @default("{}") @map("grant_rule")
+
+  organization Organization   @relation(fields: [orgId], references: [id])
+  balances     LeaveBalance[]
+  requests     Request[]
+
+  @@map("leave_type")
+}
+
+model LeaveBalance {
+  id             String    @id @default(uuid()) @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  leaveTypeId    String    @map("leave_type_id") @db.Uuid
+  grantedMinutes Int       @default(0) @map("granted_minutes")
+  usedMinutes    Int       @default(0) @map("used_minutes")
+  expiresOn      DateTime? @map("expires_on") @db.Date
+
+  user      AppUser   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  leaveType LeaveType @relation(fields: [leaveTypeId], references: [id])
+
+  @@unique([userId, leaveTypeId, expiresOn])
+  @@map("leave_balance")
+}
+
+model Shift {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  shiftDate DateTime  @map("shift_date") @db.Date
+  startTime DateTime? @map("start_time") @db.Time()
+  endTime   DateTime? @map("end_time") @db.Time()
+  kind      String    @default("planned") @db.VarChar(20) // planned/requested
+
+  user AppUser @relation(fields: [userId], references: [id])
+
+  @@unique([userId, shiftDate, kind])
+  @@map("shift")
+}
+
+model CsvMapping {
+  id       String @id @default(uuid()) @db.Uuid
+  orgId    String @map("org_id") @db.Uuid
+  name     String @db.VarChar(120)
+  mapping  Json   @default("[]") // [{column, source, format, order}]
+  encoding String @default("utf-8") @db.VarChar(20) // utf-8/shift_jis
+
+  organization Organization @relation(fields: [orgId], references: [id])
+
+  @@map("csv_mapping")
+}
+
+model AuditLog {
+  id      String   @id @default(uuid()) @db.Uuid
+  orgId   String   @map("org_id") @db.Uuid
+  actorId String?  @map("actor_id") @db.Uuid
+  action  String   @db.VarChar(60)
+  target  String?  @db.VarChar(120)
+  detail  Json?
+  at      DateTime @default(now()) @db.Timestamptz()
+
+  @@index([orgId, at])
+  @@map("audit_log")
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  type      String   @db.VarChar(40)
+  payload   Json?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  user AppUser @relation(fields: [userId], references: [id])
+
+  @@index([userId, read])
+  @@map("notification")
+}
