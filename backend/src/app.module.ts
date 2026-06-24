@@ -18,6 +18,7 @@ import { TimeRecordsModule } from './time-records/time-records.module';
 import { SummariesModule } from './summaries/summaries.module';
 import { RequestsModule } from './requests/requests.module';
 import { ApprovalsModule } from './approvals/approvals.module';
+import { ApprovalRoutesModule } from './approval-routes/approval-routes.module';
 import { LeaveModule } from './leave/leave.module';
 import { ShiftsModule } from './shifts/shifts.module';
 import { ClosingsModule } from './closings/closings.module';
@@ -46,6 +47,7 @@ import { HealthModule } from './health/health.module';
     SummariesModule,
     RequestsModule,
     ApprovalsModule,
+    ApprovalRoutesModule,
     LeaveModule,
     ShiftsModule,
     ClosingsModule,

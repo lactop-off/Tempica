@@ -9,8 +9,9 @@ import {
   IconUsers,
   IconSliders,
   IconShield,
-  IconLock,
   IconUpload,
+  IconRoute,
+  IconClipboard,
 } from '@/components/icons';
 import type { SVGProps } from 'react';
 
@@ -47,7 +48,9 @@ export const NAV: NavSection[] = [
       { href: '/members', label: 'メンバー', icon: IconUsers, perm: ['member', 'view'] },
       { href: '/work-patterns', label: '勤務形態', icon: IconSliders, perm: ['work_pattern', 'view'] },
       { href: '/roles', label: 'ロール・権限', icon: IconShield, perm: ['role', 'view'] },
+      { href: '/approval-routes', label: '承認経路', icon: IconRoute, perm: ['organization', 'manage'] },
       { href: '/closing', label: '月次締め・CSV', icon: IconUpload, perm: ['closing', 'manage'] },
+      { href: '/audit', label: '監査ログ', icon: IconClipboard, perm: ['audit', 'view'] },
     ],
   },
 ];

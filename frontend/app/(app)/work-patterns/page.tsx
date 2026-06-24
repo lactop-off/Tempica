@@ -5,6 +5,7 @@ import { api, ApiException, WorkPattern } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { Banner, Button, Card, EmptyState, Field, SectionTitle, SelectField, Spinner } from '@/components/ui';
 import { hhmm } from '@/lib/format';
+import { AssignCard } from './AssignCard';
 
 const TYPE_LABEL: Record<string, string> = {
   fixed: '固定',
@@ -116,6 +117,8 @@ export default function WorkPatternsPage() {
           </div>
         )}
       </Card>
+
+      {canManage && can('member', 'view') && items.length > 0 && <AssignCard patterns={items} />}
     </div>
   );
 }

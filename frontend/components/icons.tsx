@@ -69,3 +69,9 @@ export const IconUpload = (p: SVGProps<SVGSVGElement>) => (
 export const IconLogout = (p: SVGProps<SVGSVGElement>) => (
   <svg {...base(p)}><path d="M14 4h5v16h-5" /><path d="M10 12H3M6 8l-4 4 4 4" /></svg>
 );
+export const IconRoute = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}><circle cx="6" cy="19" r="2.5" /><circle cx="18" cy="5" r="2.5" /><path d="M8.5 19H15a3.5 3.5 0 000-7H9a3.5 3.5 0 010-7h6.5" /></svg>
+);
+export const IconClipboard = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V3h6v1M9 11h6M9 15h4" /></svg>
+);
