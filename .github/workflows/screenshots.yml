@@ -33,7 +33,9 @@ jobs:
       DATABASE_URL: postgres://app:app@localhost:5432/attendance
       SESSION_SECRET: ci-screenshot-secret-ci-screenshot
       ENABLE_JOBS: 'false'
-      NODE_ENV: production
+      # NODE_ENV は production にしない：
+      #  - npm ci が devDependencies(ts-node/nest-cli 等)を省略しないように
+      #  - セッション Cookie が secure 限定にならず http://localhost で動くように
 
     steps:
       - uses: actions/checkout@v4
