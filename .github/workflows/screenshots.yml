@@ -1,0 +1,90 @@
+name: Screenshots
+
+# 手動実行（Actions タブの Run workflow）またはフロント/デザイン変更時に、
+# 全画面のスクリーンショットを撮ってアーティファクトとして添付する。
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/screenshots.yml'
+
+jobs:
+  capture:
+    name: Capture UI screenshots
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+          POSTGRES_DB: attendance
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgres://app:app@localhost:5432/attendance
+      SESSION_SECRET: ci-screenshot-secret-ci-screenshot
+      ENABLE_JOBS: 'false'
+      NODE_ENV: production
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # ── backend: build / migrate / seed / start ──
+      - name: Backend install & build
+        working-directory: backend
+        run: |
+          npm ci
+          npx prisma generate
+          npx prisma migrate deploy
+          npm run seed
+          npm run build
+      - name: Start backend
+        working-directory: backend
+        run: |
+          PORT=3000 node dist/main.js & echo $! > /tmp/backend.pid
+          npx wait-on http://localhost:3000/api/v1/health -t 60000
+
+      # ── frontend: build / start ──
+      - name: Frontend install & build
+        working-directory: frontend
+        run: npm ci && npm run build
+      - name: Start frontend
+        working-directory: frontend
+        env:
+          BACKEND_ORIGIN: http://localhost:3000
+        run: |
+          PORT=8080 node node_modules/next/dist/bin/next start -p 8080 & echo $! > /tmp/frontend.pid
+          npx wait-on http://localhost:8080 -t 60000
+
+      # ── capture ──
+      - name: Install Playwright (chromium)
+        working-directory: frontend
+        run: |
+          npm i -D playwright
+          npx playwright install --with-deps chromium
+      - name: Capture screenshots
+        working-directory: frontend
+        env:
+          SHOT_BASE_URL: http://localhost:8080
+          SHOT_EMAIL: admin@example.com
+          SHOT_PASSWORD: Password123!
+        run: node scripts/screenshots.mjs
+
+      - name: Upload screenshots artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tempica-ui-screenshots
+          path: frontend/screenshots/**
+          if-no-files-found: error
