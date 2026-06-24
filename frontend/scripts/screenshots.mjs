@@ -21,7 +21,9 @@ const ROUTES = [
   ['members', '/members'],
   ['work-patterns', '/work-patterns'],
   ['roles', '/roles'],
+  ['approval-routes', '/approval-routes'],
   ['closing', '/closing'],
+  ['audit', '/audit'],
   ['notifications', '/notifications'],
 ];
 
