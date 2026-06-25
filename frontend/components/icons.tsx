@@ -75,3 +75,9 @@ export const IconRoute = (p: SVGProps<SVGSVGElement>) => (
 export const IconClipboard = (p: SVGProps<SVGSVGElement>) => (
   <svg {...base(p)}><rect x="5" y="4" width="14" height="17" rx="2" /><path d="M9 4V3h6v1M9 11h6M9 15h4" /></svg>
 );
+export const IconBuilding = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}><path d="M4 21V5a2 2 0 012-2h7a2 2 0 012 2v16" /><path d="M15 9h3a2 2 0 012 2v10" /><path d="M8 7h3M8 11h3M8 15h3M3 21h18" /></svg>
+);
+export const IconCog = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}><circle cx="12" cy="12" r="3" /><path d="M19 12a7 7 0 00-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 00-2-1.2l-.4-2.6H9.9l-.4 2.6a7 7 0 00-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 005 12a7 7 0 00.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 002 1.2l.4 2.6h4.2l.4-2.6a7 7 0 002-1.2l2.4 1 2-3.4-2-1.6A7 7 0 0019 12z" /></svg>
+);

@@ -165,3 +165,16 @@ export interface Notification {
   read: boolean;
   createdAt: string;
 }
+export interface Department {
+  id: string;
+  name: string;
+  parentId?: string | null;
+  kind: 'location' | 'department' | 'group';
+  sortOrder: number;
+  managerUserId?: string | null;
+}
+export interface OrganizationInfo {
+  id: string;
+  name: string;
+  settings: Record<string, any>;
+}

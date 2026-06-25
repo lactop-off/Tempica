@@ -22,12 +22,15 @@ class CreateDeptDto {
   @IsOptional() @IsUUID() parentId?: string;
   @IsOptional() @IsIn(['location', 'department', 'group']) kind?: string;
   @IsOptional() @IsInt() sortOrder?: number;
+  @IsOptional() @IsUUID() managerUserId?: string; // 部署長（承認経路の department_manager 解決に使用）
 }
 class UpdateDeptDto {
   @IsOptional() @IsString() @MinLength(1) name?: string;
   @IsOptional() @IsUUID() parentId?: string;
   @IsOptional() @IsIn(['location', 'department', 'group']) kind?: string;
   @IsOptional() @IsInt() sortOrder?: number;
+  // 部署長。null で解除（@IsOptional は null をスキップするため UUID/未指定/null を許可）。
+  @IsOptional() @IsUUID() managerUserId?: string | null;
 }
 
 @ApiTags('departments')
@@ -51,6 +54,7 @@ class DepartmentsController {
   @RequirePermission(Feature.DEPARTMENT, Action.MANAGE)
   async create(@CurrentUser() user: AuthUser, @Body() dto: CreateDeptDto) {
     if (dto.parentId) await this.assertSameOrg(user.orgId, dto.parentId);
+    if (dto.managerUserId) await this.assertOrgUser(user.orgId, dto.managerUserId);
     const dept = await this.prisma.department.create({
       data: {
         orgId: user.orgId,
@@ -58,6 +62,7 @@ class DepartmentsController {
         parentId: dto.parentId,
         kind: dto.kind ?? 'department',
         sortOrder: dto.sortOrder ?? 0,
+        managerUserId: dto.managerUserId,
       },
     });
     await this.audit.record({
@@ -81,6 +86,7 @@ class DepartmentsController {
       if (dto.parentId === id) throw BusinessException.validation('自分自身を親に指定できません');
       await this.assertSameOrg(user.orgId, dto.parentId);
     }
+    if (dto.managerUserId) await this.assertOrgUser(user.orgId, dto.managerUserId);
     const dept = await this.prisma.department.update({ where: { id }, data: dto });
     await this.audit.record({
       orgId: user.orgId,
@@ -113,6 +119,12 @@ class DepartmentsController {
   private async assertSameOrg(orgId: string, deptId: string) {
     const d = await this.prisma.department.findUnique({ where: { id: deptId } });
     if (!d || d.orgId !== orgId) throw BusinessException.notFound('部署が見つかりません');
+  }
+
+  private async assertOrgUser(orgId: string, userId: string) {
+    const u = await this.prisma.appUser.findUnique({ where: { id: userId } });
+    if (!u || u.orgId !== orgId)
+      throw BusinessException.notFound('指定したユーザーが見つかりません');
   }
 }
 

@@ -5,9 +5,10 @@ import { api, ApiException, Member } from '@/lib/api';
 import { Banner, Button, Card, EmptyState, Field, SectionTitle, SelectField, Spinner } from '@/components/ui';
 import { REQUEST_TYPE_LABEL } from '@/lib/format';
 
+type ApproverType = 'user' | 'department_manager' | 'scope';
 interface Step {
   step: number;
-  approver_type: 'user' | 'manager' | 'any';
+  approver_type: ApproverType;
   approver_ref?: string;
 }
 interface Route {
@@ -15,10 +16,20 @@ interface Route {
   name: string;
   appliesTo: string;
   steps: Step[];
+  onNoApprover?: 'auto_approve' | 'block';
+  allowSelfApprove?: boolean;
 }
 
 const APPLIES_OPTIONS = [['all', 'すべての申請'], ...Object.entries(REQUEST_TYPE_LABEL)];
-const TYPE_LABEL: Record<string, string> = { user: '指定ユーザー', manager: '上長', any: '権限保持者の誰でも' };
+const TYPE_LABEL: Record<string, string> = {
+  user: '指定ユーザー',
+  department_manager: '申請者の部署長',
+  scope: '権限保持者の誰でも',
+};
+const NO_APPROVER_LABEL: Record<string, string> = {
+  auto_approve: '自動承認',
+  block: '保留（承認者待ち）',
+};
 
 export default function ApprovalRoutesPage() {
   const [routes, setRoutes] = useState<Route[]>([]);
@@ -27,7 +38,9 @@ export default function ApprovalRoutesPage() {
   const [show, setShow] = useState(false);
   const [name, setName] = useState('');
   const [appliesTo, setAppliesTo] = useState('all');
-  const [steps, setSteps] = useState<Step[]>([{ step: 1, approver_type: 'any' }]);
+  const [steps, setSteps] = useState<Step[]>([{ step: 1, approver_type: 'scope' }]);
+  const [onNoApprover, setOnNoApprover] = useState<'auto_approve' | 'block'>('auto_approve');
+  const [allowSelfApprove, setAllowSelfApprove] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -45,7 +58,7 @@ export default function ApprovalRoutesPage() {
   }, []);
 
   function addStep() {
-    setSteps((s) => [...s, { step: s.length + 1, approver_type: 'any' }]);
+    setSteps((s) => [...s, { step: s.length + 1, approver_type: 'scope' }]);
   }
   function updateStep(i: number, patch: Partial<Step>) {
     setSteps((s) => s.map((st, idx) => (idx === i ? { ...st, ...patch } : st)));
@@ -59,11 +72,13 @@ export default function ApprovalRoutesPage() {
     if (!name.trim()) return setError('経路名を入力してください。');
     setSaving(true);
     try {
-      await api.post('/approval-routes', { name, appliesTo, steps });
+      await api.post('/approval-routes', { name, appliesTo, steps, onNoApprover, allowSelfApprove });
       setShow(false);
       setName('');
       setAppliesTo('all');
-      setSteps([{ step: 1, approver_type: 'any' }]);
+      setSteps([{ step: 1, approver_type: 'scope' }]);
+      setOnNoApprover('auto_approve');
+      setAllowSelfApprove(false);
       await load();
     } catch (e) {
       setError(e instanceof ApiException ? e.error.message : '作成に失敗しました');
@@ -125,6 +140,26 @@ export default function ApprovalRoutesPage() {
             <button onClick={addStep} className="mt-2 text-[13px] font-semibold text-brand">＋ ステップを追加</button>
           </div>
 
+          <div className="mt-4 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            <SelectField
+              label="承認者がいない場合"
+              value={onNoApprover}
+              onChange={(e) => setOnNoApprover(e.target.value as 'auto_approve' | 'block')}
+            >
+              <option value="auto_approve">自動承認（監査ログに記録）</option>
+              <option value="block">保留（承認者が決まるまで進めない）</option>
+            </SelectField>
+            <label className="flex items-center gap-2 self-end pb-2 text-[13px] text-ink">
+              <input
+                type="checkbox"
+                className="h-4 w-4"
+                checked={allowSelfApprove}
+                onChange={(e) => setAllowSelfApprove(e.target.checked)}
+              />
+              自己承認を許可する
+            </label>
+          </div>
+
           <div className="mt-4 flex justify-end">
             <Button onClick={create} disabled={saving}>{saving ? '作成中…' : '作成'}</Button>
           </div>
@@ -158,6 +193,10 @@ export default function ApprovalRoutesPage() {
                       {i < (r.steps?.length ?? 0) - 1 && <span className="text-ink-faint">→</span>}
                     </span>
                   ))}
+                </div>
+                <div className="mt-1.5 flex flex-wrap gap-2 text-[11px] text-ink-faint">
+                  <span>承認者不在時: {NO_APPROVER_LABEL[r.onNoApprover ?? 'auto_approve']}</span>
+                  <span>自己承認: {r.allowSelfApprove ? '許可' : '不可'}</span>
                 </div>
               </div>
             ))}
