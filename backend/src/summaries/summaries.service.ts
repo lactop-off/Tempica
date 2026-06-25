@@ -1,7 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { CloseStatus, RoundingMethod } from '../common/constants';
+import { CloseStatus, RoundingMethod, WorkPatternType } from '../common/constants';
 import { PrismaService } from '../prisma/prisma.service';
 import { CalcRule, computeDailySummary } from './attendance-calc';
+
+/** 勤務日（midnight UTC）と Time 値（1970-01-01Thh:mm:ssZ）を結合した絶対時刻を返す。 */
+function combineDateAndTime(dateStr: string, time: Date): Date {
+  const hh = String(time.getUTCHours()).padStart(2, '0');
+  const mm = String(time.getUTCMinutes()).padStart(2, '0');
+  return new Date(`${dateStr}T${hh}:${mm}:00`);
+}
 
 /** 日付を [00:00, 翌00:00) の範囲に変換（ローカルタイム基準）。 */
 function dayRange(date: Date): { start: Date; end: Date } {
@@ -28,13 +35,33 @@ export class SummariesService {
       include: { workPattern: { include: { workRules: true } } },
       orderBy: { startDate: 'desc' },
     });
-    const wr = assignment?.workPattern.workRules[0];
-    return {
+    const workPattern = assignment?.workPattern;
+    const wr = workPattern?.workRules[0];
+    const rule: CalcRule = {
       scheduledMinutes: wr?.scheduledMinutes ?? 480,
       breakMinutes: wr?.breakMinutes ?? 60,
       roundingUnit: wr?.roundingUnit ?? 1,
       roundingMethod: (wr?.roundingMethod as RoundingMethod) ?? 'none',
     };
+
+    // シフト制の従業員は固定の所定時刻を持たないため、その日の確定シフトを所定時刻・所定分の
+    // 基準にする（遅刻・早退・残業はこのシフトに対して判定される）。確定シフトが無ければ既定値。
+    if (workPattern?.type === WorkPatternType.SHIFT) {
+      const shift = await this.prisma.shift.findUnique({
+        where: { userId_shiftDate_kind: { userId, shiftDate: new Date(dateStr), kind: 'planned' } },
+      });
+      if (shift?.startTime && shift?.endTime) {
+        const scheduledStart = combineDateAndTime(dateStr, shift.startTime);
+        const scheduledEnd = combineDateAndTime(dateStr, shift.endTime);
+        rule.scheduledStart = scheduledStart;
+        rule.scheduledEnd = scheduledEnd;
+        const span = (scheduledEnd.getTime() - scheduledStart.getTime()) / 60000;
+        // 所定分はシフト長から所定休憩を控除（最低0）
+        rule.scheduledMinutes = Math.max(0, Math.round(span) - rule.breakMinutes);
+      }
+    }
+
+    return rule;
   }
 
   /** 1日分の打刻から日次集計を再計算して upsert する。締め済みは再計算しない。 */

@@ -104,6 +104,8 @@ async function main() {
   await prisma.userRole.create({
     data: { userId: manager.id, roleId: roleByName('現場管理者').id },
   });
+  // 開発部の部署長に現場管理者を設定（承認経路の department_manager 解決に使用）
+  await prisma.department.update({ where: { id: dev.id }, data: { managerUserId: manager.id } });
 
   const employee = await prisma.appUser.create({
     data: {

@@ -15,9 +15,19 @@
 - **パスワードハッシュ**: `bcryptjs`（純 JS でビルド容易、自己ホスト配布性を優先）。argon2 への差し替えは将来検討。
 - **RBAC の判定**: 1権限 = `feature × action × scope`。`scope` は `self < department < location < org`。
   `location`/`department` のデータ範囲は**部署ツリーの子孫**を解決して適用。
-- **承認経路**: `approval_route` が無い場合は**単一ステップ**（scope で対象申請者が見える承認者なら誰でも可）。
-  経路定義時は `steps[].approver_type='user'` で承認者を固定、それ以外は scope 判定。
-- **自己承認の扱い**: 承認一覧からは**自分の申請を除外**（代理承認は将来、`approver_type` 拡張で対応）。
+- **承認経路（汎用化済み）**: `approval_route` が無い場合は**単一ステップ・scope 動的**（APPROVAL.APPROVE を持ち
+  対象申請者が scope で見える承認者なら誰でも可）。`steps[].approver_type` で承認者の解決方式を指定する：
+  - `user`: 特定個人（`approver_ref` = userId）に固定
+  - `department_manager` / `manager_of_applicant`: 申請者の所属部署の**部署長**（`department.manager_user_id`）に固定
+  - `scope`（既定）: scope で見える承認者なら誰でも（動的）
+- **承認者不在の終端ポリシー（`approval_route.on_no_approver`）**: あるステップで承認者が1人も解決できない場合の扱い。
+  既定 `auto_approve`（監査ログ `approval.auto_approved` を残して自動承認）/ `block`（保留のまま＝承認者が解決するまで進まない）。
+  これにより**組織の頂点（唯一の管理者など）の申請が承認者不在で詰まる問題**を解消。自動解決は申請作成直後と各ステップ承認後に走り、多段にも対応。
+- **自己承認の扱い（`approval_route.allow_self_approve`）**: 既定 `false` で申請者本人を承認者候補から除外（一覧・`act` の両方で不可）。
+  除外の結果ステップが空になれば終端ポリシーを適用。`true` で自己承認を許可（管理職の自己承認など）。
+- **シフト制の集計連動**: `work_pattern.type='shift'` の従業員は、その日の**確定シフト**（`shift.kind='planned'`）の時刻を
+  所定始業・終業／所定分の基準にして遅刻・早退・残業を判定する（固定の所定時刻を持たないため）。確定シフトが無ければ既定値。
+  `fixed`/`flex` は従来どおり `work_rule` を使用。
 - **日次集計**: 打刻のたびに当日分を即時再計算。締め済み（`closed`）の日次は再計算しない。
 - **深夜帯**: 既定 22:00〜翌5:00。`work_rule.overtime_rule` に将来パラメータ化可能。
 - **休暇残数超過**: 設計どおり**警告のみ**（申請はブロックしない）。承認確定時に期限の近い残数から消化。

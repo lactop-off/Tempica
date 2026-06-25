@@ -88,7 +88,7 @@ describe('Core flow (e2e)', () => {
     expect(overlap.body.error.code).toBe('overlap');
   });
 
-  it('申請 → 承認の往復（打刻修正）', async () => {
+  it('申請 → 承認者不在は終端ポリシーで自動承認（打刻修正）', async () => {
     const created = await agent
       .post('/api/v1/requests')
       .send({
@@ -100,11 +100,15 @@ describe('Core flow (e2e)', () => {
         },
       })
       .expect(201);
-    expect(created.body.status).toBe('pending');
 
-    // 管理者自身が申請者のため承認候補からは除外される（自己承認不可）→ 別ユーザーを作って承認
+    // 申請者(管理者)が唯一の org 承認者 → 自己除外で承認者0人 →
+    // 既定の onNoApprover=auto_approve により自動承認される。
+    expect(created.body.status).toBe('approved');
+
+    // 自分の申請は承認待ち一覧には出ない（自己承認は不可）
     const pending = await agent.get('/api/v1/approvals').expect(200);
     expect(Array.isArray(pending.body)).toBe(true);
+    expect(pending.body.find((a: any) => a.request?.id === created.body.id)).toBeUndefined();
   });
 
   it('月次締め → CSV 出力（締め後は出力可）', async () => {

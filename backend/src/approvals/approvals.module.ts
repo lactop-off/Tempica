@@ -3,6 +3,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IsIn, IsOptional, IsString } from 'class-validator';
 import { Action, Feature } from '../common/constants';
 import { AuthUser, CurrentUser, RequirePermission, ResolvedScope } from '../common/decorators';
+import { ApprovalRoutesModule } from '../approval-routes/approval-routes.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { SummariesModule } from '../summaries/summaries.module';
 import { ApprovalsService } from './approvals.service';
@@ -53,8 +54,9 @@ class ApprovalsController {
 }
 
 @Module({
-  imports: [SummariesModule, NotificationsModule],
+  imports: [ApprovalRoutesModule, SummariesModule, NotificationsModule],
   controllers: [ApprovalsController],
   providers: [ApprovalsService],
+  exports: [ApprovalsService],
 })
 export class ApprovalsModule {}

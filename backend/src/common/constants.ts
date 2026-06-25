@@ -89,6 +89,22 @@ export const ApprovalResult = {
   REJECTED: 'rejected',
 } as const;
 
+/** 承認経路ステップの承認者タイプ。固定（user/部署長）か動的（scope）かを表す。 */
+export const ApproverType = {
+  USER: 'user', // 特定個人（approver_ref = userId）
+  DEPARTMENT_MANAGER: 'department_manager', // 申請者の所属部署の部署長
+  MANAGER_OF_APPLICANT: 'manager_of_applicant', // 申請者の上長（最小実装では所属部署長と同義）
+  SCOPE: 'scope', // scope で申請者が見える承認者なら誰でも（既定）
+} as const;
+export type ApproverType = (typeof ApproverType)[keyof typeof ApproverType];
+
+/** 承認者が1人も解決できないステップの終端ポリシー。 */
+export const NoApproverPolicy = {
+  AUTO_APPROVE: 'auto_approve', // 監査記録の上で自動承認
+  BLOCK: 'block', // 申請を受け付けない（422）
+} as const;
+export type NoApproverPolicy = (typeof NoApproverPolicy)[keyof typeof NoApproverPolicy];
+
 export const WorkPatternType = {
   FIXED: 'fixed',
   FLEX: 'flex',

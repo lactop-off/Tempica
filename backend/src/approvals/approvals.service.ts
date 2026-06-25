@@ -4,6 +4,8 @@ import { BusinessException } from '../common/business-exception';
 import { ApprovalResult, RequestStatus, RequestType } from '../common/constants';
 import { isVisible } from '../common/rbac';
 import { AuditService } from '../audit/audit.service';
+import { ApprovalRoutingService } from '../approval-routes/approval-routing.service';
+import { decideStep } from '../approval-routes/approval-routing';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RbacService } from '../rbac/rbac.service';
@@ -15,6 +17,7 @@ export class ApprovalsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly rbac: RbacService,
+    private readonly routing: ApprovalRoutingService,
     private readonly summaries: SummariesService,
     private readonly notifications: NotificationsService,
     private readonly audit: AuditService,
@@ -75,6 +78,11 @@ export class ApprovalsService {
         'このステップは現在の承認対象ではありません',
       );
     }
+    // 自己承認はルートで明示許可されていない限り不可
+    const plan = await this.routing.resolvePlan(orgId, req.type);
+    if (!plan.allowSelfApprove && approver.id === req.userId) {
+      throw BusinessException.forbidden('not_approver', '自分の申請は承認できません');
+    }
     // 承認者資格：approverId 指定があれば一致、無ければ scope で申請者が見えること
     if (approval.approverId && approval.approverId !== approver.id) {
       throw BusinessException.forbidden(
@@ -97,26 +105,110 @@ export class ApprovalsService {
     }
 
     const totalSteps = await this.prisma.approval.count({ where: { requestId: req.id } });
+    const { request, finalized } = await this.recordDecision({
+      orgId,
+      req,
+      approval,
+      totalSteps,
+      result: input.result,
+      actorId: approver.id,
+      comment: input.comment,
+    });
 
-    const result = await this.prisma.$transaction(async (tx) => {
+    if (input.result === 'approved') {
+      if (finalized) {
+        await this.recomputeIfPunchFix(req); // 集計再計算（トランザクション外）
+      } else {
+        // 後続に承認者不在のステップがあればポリシーに従って前進させる
+        await this.autoResolve(orgId, req.id);
+        return this.getRequestView(req.id);
+      }
+    }
+    return request;
+  }
+
+  /**
+   * 承認経路の自動解決。現在ステップの承認者を解決し、1人もいなければ
+   * ルートの onNoApprover に従って自動承認で前進させる（多段にも対応）。
+   * pending（人間が承認）または block に達したら停止する。
+   * 申請作成直後と、各ステップ承認後に呼ばれる。
+   */
+  async autoResolve(orgId: string, requestId: string): Promise<void> {
+    for (let guard = 0; guard < 100; guard++) {
+      const req = await this.prisma.request.findUnique({
+        where: { id: requestId },
+        include: { user: true },
+      });
+      if (!req || req.status !== RequestStatus.PENDING) return;
+
+      const approval = await this.prisma.approval.findFirst({
+        where: { requestId, step: req.currentStep },
+      });
+      if (!approval || approval.result !== ApprovalResult.PENDING) return;
+
+      const plan = await this.routing.resolvePlan(orgId, req.type);
+      const stepDesc = plan.steps.find((s) => s.step === approval.step) ?? {
+        step: approval.step,
+        approverType: 'scope',
+        approverRef: null,
+      };
+      const { ids } = await this.routing.candidateApprovers(orgId, stepDesc, {
+        userId: req.userId,
+        deptId: req.user.deptId,
+      });
+      const decision = decideStep({
+        candidateIds: ids,
+        applicantId: req.userId,
+        allowSelfApprove: plan.allowSelfApprove,
+        onNoApprover: plan.onNoApprover,
+      });
+      if (decision.resolution !== 'auto_approve') return; // pending / block はここで停止
+
+      const totalSteps = await this.prisma.approval.count({ where: { requestId } });
+      const { finalized } = await this.recordDecision({
+        orgId,
+        req,
+        approval,
+        totalSteps,
+        result: 'approved',
+        actorId: null,
+        comment: '承認者不在のため自動承認',
+        auto: true,
+      });
+      if (finalized) {
+        await this.recomputeIfPunchFix(req);
+        return;
+      }
+    }
+  }
+
+  /** 1ステップの承認/差戻しを記録し、ステータス遷移・反映・監査・通知を行う共通処理。 */
+  private async recordDecision(params: {
+    orgId: string;
+    req: any;
+    approval: { id: string; step: number };
+    totalSteps: number;
+    result: 'approved' | 'rejected';
+    actorId: string | null;
+    comment?: string;
+    auto?: boolean;
+  }): Promise<{ request: any; finalized: boolean }> {
+    const { orgId, req, approval, totalSteps, result, actorId, comment, auto } = params;
+    const finalized = result === 'approved' && approval.step >= totalSteps;
+
+    const request = await this.prisma.$transaction(async (tx) => {
       await tx.approval.update({
-        where: { id: approvalId },
-        data: {
-          result: input.result,
-          approverId: approver.id,
-          comment: input.comment,
-          actedAt: new Date(),
-        },
+        where: { id: approval.id },
+        data: { result, approverId: actorId, comment, actedAt: new Date() },
       });
 
-      if (input.result === 'rejected') {
+      if (result === 'rejected') {
         await tx.request.update({
           where: { id: req.id },
           data: { status: RequestStatus.REJECTED },
         });
         await this.notifications.notify(req.userId, 'request.rejected', { requestId: req.id }, tx);
-      } else if (approval.step >= totalSteps) {
-        // 最終承認 → 反映
+      } else if (finalized) {
         await tx.request.update({
           where: { id: req.id },
           data: { status: RequestStatus.APPROVED },
@@ -132,8 +224,8 @@ export class ApprovalsService {
 
       await this.audit.record({
         orgId,
-        actorId: approver.id,
-        action: `approval.${input.result}`,
+        actorId,
+        action: auto ? 'approval.auto_approved' : `approval.${result}`,
         target: req.id,
         detail: { step: approval.step },
         tx,
@@ -144,18 +236,22 @@ export class ApprovalsService {
         include: { approvals: { orderBy: { step: 'asc' } } },
       });
     });
+    return { request, finalized };
+  }
 
-    // punch_fix の集計再計算（トランザクション外で実行）
-    if (
-      input.result === 'approved' &&
-      approval.step >= totalSteps &&
-      req.type === RequestType.PUNCH_FIX
-    ) {
-      const dateStr = (req.payload as any)?.target_date;
-      if (dateStr) await this.summaries.recompute(req.userId, new Date(dateStr));
-    }
+  /** punch_fix の対象日を再集計（トランザクション外で実行）。 */
+  private async recomputeIfPunchFix(req: any) {
+    if (req.type !== RequestType.PUNCH_FIX) return;
+    const dateStr = (req.payload as any)?.target_date;
+    if (dateStr) await this.summaries.recompute(req.userId, new Date(dateStr));
+  }
 
-    return result;
+  /** 申請の現在状態（承認ステップ込み）を取得。 */
+  private getRequestView(requestId: string) {
+    return this.prisma.request.findUnique({
+      where: { id: requestId },
+      include: { approvals: { orderBy: { step: 'asc' } } },
+    });
   }
 
   /** 承認確定時の種別別反映。 */
