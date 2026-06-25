@@ -59,11 +59,22 @@
 
 ```bash
 cp .env.example .env             # 値を設定（DB_PASSWORD / SESSION_SECRET など）
-docker compose up -d --build     # 起動
-docker compose exec backend npm run prisma:deploy   # マイグレーション
-docker compose exec backend npm run seed            # 標準ロール等の初期データ
-# → ブラウザで初期セットアップ（S-02）へ
+docker compose up -d --build     # 起動（マイグレーション + 初期データ投入まで自動）
+# → http://localhost:8080 を開く
 ```
+
+backend コンテナは起動時に **マイグレーション適用 + 初期データ投入（冪等）** を自動実行するため、
+追加の手動手順は不要です（無効化する場合は `AUTO_MIGRATE=false` / `AUTO_SEED=false`）。
+
+デモ用ログイン（シード投入される標準データ）:
+
+| メール | ロール | パスワード |
+|---|---|---|
+| `admin@example.com` | システム管理者 | `Password123!` |
+| `manager@example.com` | 現場管理者 | `Password123!` |
+| `employee@example.com` | 一般従業員 | `Password123!` |
+
+空の組織から始めたい場合は、シードをスキップ（`AUTO_SEED=false`）してブラウザの初期セットアップ（S-02）を使用します。
 
 ### ローカル（backend 単体）
 

@@ -1,13 +1,18 @@
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
-import { ROLE_TEMPLATES } from '../src/rbac/role-templates';
+import { ROLE_TEMPLATES } from './rbac/role-templates';
 
 /**
  * 開発・デモ用の初期データ投入。
  * 既に組織が存在する場合は何もしない（本番では Web の初期セットアップを使用）。
+ * 冪等なため、コンテナ起動時に毎回実行しても安全（docker-entrypoint.sh）。
  *
  * 投入内容: デモ組織 / 標準ロール / 部署 / 雇用区分 / 勤務形態+就業ルール /
  *           管理者・一般従業員 / 休暇種別。
+ *
+ * src 配下に置くことで build 時 dist/seed.js にコンパイルされ、本番イメージでも
+ * `node dist/seed.js` で実行できる（worker.ts と同じ方式）。ローカル開発では
+ * `npm run seed`（ts-node）で実行する。
  */
 const prisma = new PrismaClient();
 
@@ -27,7 +32,12 @@ async function main() {
   const roles = await Promise.all(
     ROLE_TEMPLATES.map((t) =>
       prisma.role.create({
-        data: { orgId: org.id, name: t.name, isTemplate: true, permissions: t.permissions as object },
+        data: {
+          orgId: org.id,
+          name: t.name,
+          isTemplate: true,
+          permissions: t.permissions as object,
+        },
       }),
     ),
   );
@@ -75,7 +85,9 @@ async function main() {
       status: 'active',
     },
   });
-  await prisma.userRole.create({ data: { userId: admin.id, roleId: roleByName('システム管理者').id } });
+  await prisma.userRole.create({
+    data: { userId: admin.id, roleId: roleByName('システム管理者').id },
+  });
 
   const manager = await prisma.appUser.create({
     data: {
@@ -89,7 +101,9 @@ async function main() {
       status: 'active',
     },
   });
-  await prisma.userRole.create({ data: { userId: manager.id, roleId: roleByName('現場管理者').id } });
+  await prisma.userRole.create({
+    data: { userId: manager.id, roleId: roleByName('現場管理者').id },
+  });
 
   const employee = await prisma.appUser.create({
     data: {
@@ -103,18 +117,31 @@ async function main() {
       status: 'active',
     },
   });
-  await prisma.userRole.create({ data: { userId: employee.id, roleId: roleByName('一般従業員').id } });
+  await prisma.userRole.create({
+    data: { userId: employee.id, roleId: roleByName('一般従業員').id },
+  });
 
   // 勤務形態の個人割当（有効期間つき）
   for (const u of [admin, manager, employee]) {
     await prisma.userWorkPattern.create({
-      data: { userId: u.id, workPatternId: pattern.id, startDate: new Date('2026-01-01'), endDate: null },
+      data: {
+        userId: u.id,
+        workPatternId: pattern.id,
+        startDate: new Date('2026-01-01'),
+        endDate: null,
+      },
     });
   }
 
   // 休暇種別 + 残数
   const paidLeave = await prisma.leaveType.create({
-    data: { orgId: org.id, name: '有給休暇', paid: true, unit: 'day', grantRule: { autoGrant: true } },
+    data: {
+      orgId: org.id,
+      name: '有給休暇',
+      paid: true,
+      unit: 'day',
+      grantRule: { autoGrant: true },
+    },
   });
   await prisma.leaveType.create({
     data: { orgId: org.id, name: '振替休日', paid: true, unit: 'day' },

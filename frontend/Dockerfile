@@ -4,6 +4,9 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+# rewrites() の宛先はビルド時に焼き込まれるため、ここで backend を指定する
+ARG BACKEND_ORIGIN=http://backend:3000
+ENV BACKEND_ORIGIN=${BACKEND_ORIGIN}
 RUN npm run build
 
 # ── runtime stage（Next.js standalone 出力） ───────────────────

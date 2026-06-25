@@ -35,7 +35,9 @@ async function bootstrap() {
       saveUninitialized: false,
       cookie: {
         httpOnly: true,
-        secure: config.get('NODE_ENV') === 'production',
+        // TLS 終端の背後で運用する場合は SESSION_COOKIE_SECURE=true を設定する。
+        // 既定は false（HTTP の自己ホスト/PoC でセッションが維持されるように）。
+        secure: config.get('SESSION_COOKIE_SECURE', 'false') === 'true',
         sameSite: 'lax',
         maxAge: 1000 * 60 * 60 * 8, // 8時間
       },
