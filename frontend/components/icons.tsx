@@ -81,3 +81,6 @@ export const IconBuilding = (p: SVGProps<SVGSVGElement>) => (
 export const IconCog = (p: SVGProps<SVGSVGElement>) => (
   <svg {...base(p)}><circle cx="12" cy="12" r="3" /><path d="M19 12a7 7 0 00-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 00-2-1.2l-.4-2.6H9.9l-.4 2.6a7 7 0 00-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 005 12a7 7 0 00.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 002 1.2l.4 2.6h4.2l.4-2.6a7 7 0 002-1.2l2.4 1 2-3.4-2-1.6A7 7 0 0019 12z" /></svg>
 );
+export const IconBadge = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}><rect x="4" y="5" width="16" height="15" rx="2" /><path d="M9 3h6v3H9zM8 11h8M8 15h5" /></svg>
+);

@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module';
 import { SetupModule } from './setup/setup.module';
 import { OrganizationModule } from './organization/organization.module';
 import { DepartmentsModule } from './departments/departments.module';
+import { EmploymentTypesModule } from './employment-types/employment-types.module';
 import { UsersModule } from './users/users.module';
 import { RolesModule } from './roles/roles.module';
 import { WorkPatternsModule } from './work-patterns/work-patterns.module';
@@ -40,6 +41,7 @@ import { HealthModule } from './health/health.module';
     SetupModule,
     OrganizationModule,
     DepartmentsModule,
+    EmploymentTypesModule,
     UsersModule,
     RolesModule,
     WorkPatternsModule,

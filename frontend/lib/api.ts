@@ -178,3 +178,14 @@ export interface OrganizationInfo {
   name: string;
   settings: Record<string, any>;
 }
+export interface EmploymentType {
+  id: string;
+  name: string;
+}
+export interface LeaveType {
+  id: string;
+  name: string;
+  paid: boolean;
+  unit: 'day' | 'half' | 'hour';
+  grantRule?: Record<string, any>;
+}

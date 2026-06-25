@@ -14,6 +14,7 @@ import {
   IconClipboard,
   IconBuilding,
   IconCog,
+  IconBadge,
 } from '@/components/icons';
 import type { SVGProps } from 'react';
 
@@ -49,7 +50,9 @@ export const NAV: NavSection[] = [
     items: [
       { href: '/members', label: 'メンバー', icon: IconUsers, perm: ['member', 'view'] },
       { href: '/departments', label: '部署', icon: IconBuilding, perm: ['department', 'view'] },
+      { href: '/employment-types', label: '雇用区分', icon: IconBadge, perm: ['organization', 'manage'] },
       { href: '/work-patterns', label: '勤務形態', icon: IconSliders, perm: ['work_pattern', 'view'] },
+      { href: '/leave-types', label: '休暇種別', icon: IconLeaf, perm: ['leave', 'manage'] },
       { href: '/roles', label: 'ロール・権限', icon: IconShield, perm: ['role', 'view'] },
       { href: '/approval-routes', label: '承認経路', icon: IconRoute, perm: ['organization', 'manage'] },
       { href: '/closing', label: '月次締め・CSV', icon: IconUpload, perm: ['closing', 'manage'] },
