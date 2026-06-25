@@ -138,6 +138,7 @@ export interface Member {
   employeeCode?: string | null;
   status: string;
   deptId?: string | null;
+  employmentTypeId?: string | null;
   roles?: { roleId: string }[];
 }
 export interface Role {

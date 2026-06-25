@@ -137,22 +137,24 @@ class LeaveController {
     if (!target || target.orgId !== user.orgId)
       throw BusinessException.notFound('ユーザーが見つかりません');
     const expiresOn = dto.expiresOn ? new Date(dto.expiresOn) : null;
-    const balance = await this.prisma.leaveBalance.upsert({
-      where: {
-        userId_leaveTypeId_expiresOn: {
-          userId: dto.userId,
-          leaveTypeId: dto.leaveTypeId,
-          expiresOn: expiresOn as any,
-        },
-      },
-      create: {
-        userId: dto.userId,
-        leaveTypeId: dto.leaveTypeId,
-        grantedMinutes: dto.grantedMinutes,
-        expiresOn,
-      },
-      update: { grantedMinutes: { increment: dto.grantedMinutes } },
+    // 同一 (user, type, 失効日) があれば加算、無ければ作成。
+    // expiresOn が null だと複合ユニークの upsert/where が使えないため findFirst で解決する。
+    const existing = await this.prisma.leaveBalance.findFirst({
+      where: { userId: dto.userId, leaveTypeId: dto.leaveTypeId, expiresOn },
     });
+    const balance = existing
+      ? await this.prisma.leaveBalance.update({
+          where: { id: existing.id },
+          data: { grantedMinutes: { increment: dto.grantedMinutes } },
+        })
+      : await this.prisma.leaveBalance.create({
+          data: {
+            userId: dto.userId,
+            leaveTypeId: dto.leaveTypeId,
+            grantedMinutes: dto.grantedMinutes,
+            expiresOn,
+          },
+        });
     await this.audit.record({
       orgId: user.orgId,
       actorId: user.id,
