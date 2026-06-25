@@ -46,17 +46,20 @@ model Organization {
 }
 
 model Department {
-  id        String  @id @default(uuid()) @db.Uuid
-  orgId     String  @map("org_id") @db.Uuid
-  parentId  String? @map("parent_id") @db.Uuid
-  name      String  @db.VarChar(200)
-  kind      String  @default("department") @db.VarChar(20) // location / department / group
-  sortOrder Int     @default(0) @map("sort_order")
+  id            String  @id @default(uuid()) @db.Uuid
+  orgId         String  @map("org_id") @db.Uuid
+  parentId      String? @map("parent_id") @db.Uuid
+  name          String  @db.VarChar(200)
+  kind          String  @default("department") @db.VarChar(20) // location / department / group
+  sortOrder     Int     @default(0) @map("sort_order")
+  // 部署長。承認経路の department_manager / manager_of_applicant 解決に使用する。
+  managerUserId String? @map("manager_user_id") @db.Uuid
 
   organization Organization @relation(fields: [orgId], references: [id])
   parent       Department?  @relation("DeptTree", fields: [parentId], references: [id])
   children     Department[] @relation("DeptTree")
-  users        AppUser[]
+  users        AppUser[]    @relation("DeptMembers")
+  manager      AppUser?     @relation("DeptManager", fields: [managerUserId], references: [id])
 
   @@index([orgId])
   @@map("department")
@@ -89,9 +92,10 @@ model AppUser {
   updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz()
 
   organization   Organization    @relation(fields: [orgId], references: [id])
-  department     Department?     @relation(fields: [deptId], references: [id])
+  department     Department?     @relation("DeptMembers", fields: [deptId], references: [id])
   employmentType EmploymentType? @relation(fields: [employmentTypeId], references: [id])
 
+  managedDepartments Department[]      @relation("DeptManager")
   roles             UserRole[]
   workPatterns      UserWorkPattern[]
   timeRecords       TimeRecord[]
@@ -272,7 +276,11 @@ model ApprovalRoute {
   orgId     String @map("org_id") @db.Uuid
   name      String @db.VarChar(120)
   appliesTo String @default("all") @map("applies_to") @db.VarChar(30)
-  steps     Json   @default("[]") // [{step, approver_type, approver_ref}]
+  steps     Json   @default("[]") // [{step, approver_type, approver_ref}] approver_type: user/department_manager/manager_of_applicant/scope
+  // 承認者が1人も解決できないステップの扱い: auto_approve（監査記録の上で自動承認）/ block（申請不可）
+  onNoApprover    String  @default("auto_approve") @map("on_no_approver") @db.VarChar(20)
+  // 申請者自身を承認者候補に含めてよいか（既定 false: 自己承認を除外）
+  allowSelfApprove Boolean @default(false) @map("allow_self_approve")
 
   organization Organization @relation(fields: [orgId], references: [id])
 

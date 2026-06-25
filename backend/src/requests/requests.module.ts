@@ -3,6 +3,8 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { IsIn, IsObject, IsOptional, IsUUID } from 'class-validator';
 import { Action, Feature, RequestType } from '../common/constants';
 import { AuthUser, CurrentUser, RequirePermission } from '../common/decorators';
+import { ApprovalRoutesModule } from '../approval-routes/approval-routes.module';
+import { ApprovalsModule } from '../approvals/approvals.module';
 import { RequestsService } from './requests.service';
 
 const TYPES = Object.values(RequestType);
@@ -45,6 +47,7 @@ class RequestsController {
 }
 
 @Module({
+  imports: [ApprovalRoutesModule, ApprovalsModule],
   controllers: [RequestsController],
   providers: [RequestsService],
 })

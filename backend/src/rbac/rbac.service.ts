@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { Permission, Scope } from '../common/constants';
+import { Action, Feature, Permission, Scope } from '../common/constants';
 import { PrismaService } from '../prisma/prisma.service';
-import { resolveScope } from '../common/rbac';
+import { isVisible, resolveScope } from '../common/rbac';
 
 /**
  * ユーザーの権限ロード・scope 解決・アクセス可能部署の算出を担う。
@@ -68,6 +68,43 @@ export class RbacService {
       seen.add(id);
       result.push(id);
       for (const c of childrenByParent.get(id) ?? []) stack.push(c);
+    }
+    return result;
+  }
+
+  /**
+   * 指定した申請者を「承認できる」ユーザー ID 群を返す（申請者本人も含む。除外は呼び出し側）。
+   * 条件: APPROVAL.APPROVE 権限を持ち、その scope で申請者のデータが見えること。
+   * 承認経路が scope 方式（承認者未固定）のステップで、承認者が存在するかの判定に使う。
+   */
+  async eligibleApproverIds(
+    orgId: string,
+    subject: { userId: string; deptId?: string | null },
+  ): Promise<string[]> {
+    const users = await this.prisma.appUser.findMany({
+      where: { orgId, status: 'active' },
+      select: {
+        id: true,
+        deptId: true,
+        roles: { select: { role: { select: { permissions: true } } } },
+      },
+    });
+    const result: string[] = [];
+    for (const u of users) {
+      const perms: Permission[] = [];
+      for (const r of u.roles) {
+        const list = (r.role.permissions as unknown as Permission[]) ?? [];
+        if (Array.isArray(list)) perms.push(...list);
+      }
+      const scope = resolveScope(perms, Feature.APPROVAL, Action.APPROVE);
+      if (!scope) continue;
+      const accessible = await this.accessibleDeptIds(orgId, u.deptId, scope);
+      const visible = isVisible(
+        scope,
+        { userId: u.id, deptId: u.deptId, accessibleDeptIds: accessible },
+        { ownerUserId: subject.userId, ownerDeptId: subject.deptId },
+      );
+      if (visible) result.push(u.id);
     }
     return result;
   }

@@ -13,6 +13,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsBoolean,
   IsIn,
   IsInt,
   IsOptional,
@@ -20,28 +21,36 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import { Action, Feature, RequestType } from '../common/constants';
+import { Action, ApproverType, Feature, NoApproverPolicy, RequestType } from '../common/constants';
 import { BusinessException } from '../common/business-exception';
 import { AuthUser, CurrentUser, RequirePermission } from '../common/decorators';
 import { AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { ApprovalRoutingService } from './approval-routing.service';
 
 const APPLIES = ['all', ...Object.values(RequestType)];
+const APPROVER_TYPES = Object.values(ApproverType);
+const NO_APPROVER_POLICIES = Object.values(NoApproverPolicy);
 
 class StepDto {
   @IsInt() step!: number;
-  @IsIn(['user', 'manager', 'any']) approver_type!: string;
+  // user / department_manager / manager_of_applicant / scope
+  @IsIn(APPROVER_TYPES) approver_type!: string;
   @IsOptional() @IsString() approver_ref?: string; // approver_type='user' のとき user_id
 }
 class CreateRouteDto {
   @IsString() @MinLength(1) name!: string;
   @IsOptional() @IsIn(APPLIES) appliesTo?: string;
   @IsArray() @ValidateNested({ each: true }) @Type(() => StepDto) steps!: StepDto[];
+  @IsOptional() @IsIn(NO_APPROVER_POLICIES) onNoApprover?: string;
+  @IsOptional() @IsBoolean() allowSelfApprove?: boolean;
 }
 class UpdateRouteDto {
   @IsOptional() @IsString() @MinLength(1) name?: string;
   @IsOptional() @IsIn(APPLIES) appliesTo?: string;
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => StepDto) steps?: StepDto[];
+  @IsOptional() @IsIn(NO_APPROVER_POLICIES) onNoApprover?: string;
+  @IsOptional() @IsBoolean() allowSelfApprove?: boolean;
 }
 
 @ApiTags('approval-routes')
@@ -70,6 +79,8 @@ class ApprovalRoutesController {
         name: dto.name,
         appliesTo: dto.appliesTo ?? 'all',
         steps: dto.steps as unknown as object,
+        onNoApprover: dto.onNoApprover ?? undefined,
+        allowSelfApprove: dto.allowSelfApprove ?? undefined,
       },
     });
     await this.audit.record({
@@ -95,6 +106,8 @@ class ApprovalRoutesController {
         name: dto.name,
         appliesTo: dto.appliesTo,
         steps: dto.steps as unknown as object | undefined,
+        onNoApprover: dto.onNoApprover,
+        allowSelfApprove: dto.allowSelfApprove,
       },
     });
     await this.audit.record({
@@ -129,5 +142,7 @@ class ApprovalRoutesController {
 
 @Module({
   controllers: [ApprovalRoutesController],
+  providers: [ApprovalRoutingService],
+  exports: [ApprovalRoutingService],
 })
 export class ApprovalRoutesModule {}

@@ -3,18 +3,17 @@ import { Prisma } from '@prisma/client';
 import { BusinessException } from '../common/business-exception';
 import { CloseStatus, RequestStatus, RequestType } from '../common/constants';
 import { AuditService } from '../audit/audit.service';
+import { ApprovalRoutingService } from '../approval-routes/approval-routing.service';
+import { ApprovalsService } from '../approvals/approvals.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { computeLeaveMinutes } from './leave-minutes';
-
-interface ApprovalStep {
-  step: number;
-  approverId: string | null;
-}
 
 @Injectable()
 export class RequestsService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly routing: ApprovalRoutingService,
+    private readonly approvals: ApprovalsService,
     private readonly audit: AuditService,
   ) {}
 
@@ -35,22 +34,6 @@ export class RequestsService {
         { field: 'payload.target_date', reason: 'period_closed' },
       ]);
     }
-  }
-
-  /** 承認経路を解決してステップ配列を返す（無ければ単一ステップ）。 */
-  private async resolveSteps(orgId: string, type: string): Promise<ApprovalStep[]> {
-    const route = await this.prisma.approvalRoute.findFirst({
-      where: { orgId, OR: [{ appliesTo: type }, { appliesTo: 'all' }] },
-      orderBy: { appliesTo: 'asc' }, // 'all' より具体的な type を優先
-    });
-    const steps = (route?.steps as unknown as any[]) ?? [];
-    if (!Array.isArray(steps) || steps.length === 0) {
-      return [{ step: 1, approverId: null }];
-    }
-    return steps.map((s, i) => ({
-      step: s.step ?? i + 1,
-      approverId: s.approver_type === 'user' ? (s.approver_ref ?? null) : null,
-    }));
   }
 
   async create(
@@ -82,7 +65,20 @@ export class RequestsService {
       }
     }
 
-    const steps = await this.resolveSteps(orgId, dto.type);
+    // 承認経路を解決し、各ステップの固定承認者（user / 部署長）を確定する。
+    const applicant = await this.prisma.appUser.findUnique({
+      where: { id: userId },
+      select: { deptId: true },
+    });
+    const plan = await this.routing.resolvePlan(orgId, dto.type);
+    const stepRows = [] as { step: number; approverId: string | null }[];
+    for (const s of plan.steps) {
+      const { fixedApproverId } = await this.routing.candidateApprovers(orgId, s, {
+        userId,
+        deptId: applicant?.deptId,
+      });
+      stepRows.push({ step: s.step, approverId: fixedApproverId });
+    }
 
     const request = await this.prisma.$transaction(async (tx) => {
       const req = await tx.request.create({
@@ -97,7 +93,7 @@ export class RequestsService {
         },
       });
       await tx.approval.createMany({
-        data: steps.map((s) => ({ requestId: req.id, step: s.step, approverId: s.approverId })),
+        data: stepRows.map((s) => ({ requestId: req.id, step: s.step, approverId: s.approverId })),
       });
       await this.audit.record({
         orgId,
@@ -110,7 +106,14 @@ export class RequestsService {
       return req;
     });
 
-    return { ...request, warnings };
+    // 承認者が不在のステップはポリシー（既定: 自動承認）に従い前進させる。
+    await this.approvals.autoResolve(orgId, request.id);
+
+    const fresh = await this.prisma.request.findUnique({
+      where: { id: request.id },
+      include: { approvals: { orderBy: { step: 'asc' } } },
+    });
+    return { ...(fresh ?? request), warnings };
   }
 
   async listForUser(orgId: string, userId: string, status?: string) {
